@@ -18,7 +18,7 @@ class CocoEvaluator:
         self.img_ids = []
         self.eval_imgs = {k: [] for k in iou_types}
 
-    def accumulate(self, coco_results):
+    def accumulate_results(self, coco_results):
         image_ids = list(set([res["image_id"] for res in coco_results]))
         for iou_type in self.iou_types:
             coco_eval = self.coco_eval[iou_type]
@@ -93,7 +93,6 @@ class CocoEvaluator:
 
             masks = prediction["masks"]
             masks = masks > 0.5
-
             scores = prediction["scores"].tolist()
             labels = prediction["labels"].tolist()
 

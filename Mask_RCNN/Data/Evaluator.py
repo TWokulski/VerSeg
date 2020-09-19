@@ -1,3 +1,4 @@
+import json
 import copy
 import torch
 import numpy as np
@@ -85,7 +86,6 @@ def loadRes(self, resFile):
     """
     res = COCO()
     res.dataset['images'] = [img for img in self.dataset['images']]
-
 
     if isinstance(resFile, torch._six.string_classes):
         anns = json.load(open(resFile))
@@ -185,17 +185,14 @@ def prepare_for_coco(predictions, ann_labels):
         if len(prediction) == 0:
             continue
 
-        boxes = prediction["boxes"]
-        scores = prediction["scores"]
-        labels = prediction["labels"]
         masks = prediction["masks"]
-
+        boxes = prediction["boxes"]
         x1, y1, x2, y2 = boxes.unbind(1)
         boxes = torch.stack((x1, y1, x2 - x1, y2 - y1), dim=1)
         boxes = boxes.tolist()
         scores = prediction["scores"].tolist()
         labels = prediction["labels"].tolist()
-        labels = [ann_labels[l] for l in labels]
+        labels = [ann_labels[label] for label in labels]
 
         masks = masks > 0.5
         rles = [
