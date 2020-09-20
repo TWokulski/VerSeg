@@ -1,5 +1,5 @@
 try:
-    from .coco_eval import CocoEvaluator
+    from .COCO_Evaluator import CocoEvaluator
 except ImportError:
     pass
 
