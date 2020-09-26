@@ -10,8 +10,8 @@ from ..Utils.BatchSampler import BalancedPositiveNegativeSampler
 
 class RegionProposalNetwork(nn.Module):
     def __init__(self, anchor_generator, head, fg_iou_thresh, bg_iou_thresh,
-                 num_samples, positive_fraction, reg_weights, pre_nms_top_n,
-                 post_nms_top_n, nms_thresh):
+                 num_samples, positive_fraction, reg_weights, proposals_before_nms,
+                 proposals_after_nms, nms_thresh):
 
         super().__init__()
 
@@ -20,26 +20,26 @@ class RegionProposalNetwork(nn.Module):
         self.proposal_matcher = Matcher(fg_iou_thresh, bg_iou_thresh)
         self.sampler = BalancedPositiveNegativeSampler(num_samples, positive_fraction)
         self.box_coder = BoxCoder(reg_weights)
-        self._pre_nms_top_n = pre_nms_top_n
-        self._post_nms_top_n = post_nms_top_n
+        self._proposals_before_nms = proposals_before_nms
+        self._proposals_after_nms = proposals_after_nms
         self.nms_thresh = nms_thresh
         self.min_size = 1
 
     def create_proposal(self, anchor, classifier, delta, image_shape):
         if self.training:
-            pre_nms_top_n = self._pre_nms_top_n['training']
-            post_nms_top_n = self._post_nms_top_n['training']
+            proposals_before_nms = self._proposals_before_nms['training']
+            proposals_after_nms = self._proposals_after_nms['training']
         else:
-            pre_nms_top_n = self._pre_nms_top_n['testing']
-            post_nms_top_n = self._post_nms_top_n['testing']
+            proposals_before_nms = self._proposals_before_nms['testing']
+            proposals_after_nms = self._proposals_after_nms['testing']
 
-        pre_nms_top_n = min(classifier.shape[0], pre_nms_top_n)
-        top_n_idx = classifier.topk(pre_nms_top_n)[1]
+        proposals_before_nms = min(classifier.shape[0], proposals_before_nms)
+        top_n_idx = classifier.topk(proposals_before_nms)[1]
         score = classifier[top_n_idx]
         proposal = self.box_coder.decode(delta[top_n_idx], anchor[top_n_idx])
 
         proposal, score = self.box_coder.process_box(proposal, score, image_shape, self.min_size)
-        keep = nms(proposal, score, self.nms_thresh)[:post_nms_top_n]
+        keep = nms(proposal, score, self.nms_thresh)[:proposals_after_nms]
         proposal = proposal[keep]
         return proposal
 
