@@ -17,3 +17,8 @@ try:
     from .Coder import box_iou
 except ImportError:
     pass
+
+try:
+    from .Coder import process_box
+except ImportError:
+    pass

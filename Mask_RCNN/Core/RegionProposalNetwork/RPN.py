@@ -3,6 +3,7 @@ from torch import nn
 import torch.nn.functional as F
 from ..Utils import box_iou
 from ..Utils import BoxCoder
+from ..Utils import process_box
 from ..Utils import Matcher
 from torchvision.ops.boxes import nms
 from ..Utils import BalancedPositiveNegativeSampler
@@ -38,7 +39,7 @@ class RegionProposalNetwork(nn.Module):
         score = classifier[top_n_idx]
         proposal = self.box_coder.decode(delta[top_n_idx], anchor[top_n_idx])
 
-        proposal, score = self.box_coder.process_box(proposal, score, image_shape, self.min_size)
+        proposal, score = process_box(proposal, score, image_shape, self.min_size)
         keep = nms(proposal, score, self.nms_thresh)[:proposals_after_nms]
         proposal = proposal[keep]
         return proposal
