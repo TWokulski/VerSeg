@@ -1,11 +1,11 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
-from ..Utils.Coder import box_iou
-from ..Utils.Coder import BoxCoder
-from ..Utils.Matcher import Matcher
+from ..Utils import box_iou
+from ..Utils import BoxCoder
+from ..Utils import Matcher
 from torchvision.ops.boxes import nms
-from ..Utils.BatchSampler import BalancedPositiveNegativeSampler
+from ..Utils import BalancedPositiveNegativeSampler
 
 
 class RegionProposalNetwork(nn.Module):
