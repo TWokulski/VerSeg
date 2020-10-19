@@ -3,7 +3,9 @@ import torch.nn.functional as F
 
 
 class FastRCNNPredictor(nn.Module):
-    def __init__(self, in_channels, mid_channels, num_classes):
+    def __init__(self, in_channels,
+                 mid_channels,
+                 num_classes):
         super().__init__()
         self.fc1 = nn.Linear(in_channels, mid_channels)
         self.fc2 = nn.Linear(mid_channels, mid_channels)
