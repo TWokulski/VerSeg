@@ -52,11 +52,6 @@ class MaskRCNN(nn.Module):
 
         self.head.mask_predictor = MaskRCNNPredictor(out_channels, layers, dim_reduced, number_of_classes)
 
-        self.transformer = Transformer(
-            min_size=800, max_size=1333,
-            image_mean=[0.485, 0.456, 0.406],
-            image_std=[0.229, 0.224, 0.225])
-
     def forward(self, image, target=None):
         ori_image_shape = image.shape[-2:]
 
