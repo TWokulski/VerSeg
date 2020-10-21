@@ -10,9 +10,16 @@ from ..Utils import BalancedPositiveNegativeSampler
 
 
 class RegionProposalNetwork(nn.Module):
-    def __init__(self, anchor_generator, head, fg_iou_thresh, bg_iou_thresh,
-                 num_samples, positive_fraction, reg_weights, proposals_before_nms,
-                 proposals_after_nms, nms_thresh):
+    def __init__(self, anchor_generator,
+                 head,
+                 fg_iou_thresh,
+                 bg_iou_thresh,
+                 num_samples,
+                 positive_fraction,
+                 reg_weights,
+                 proposals_before_nms,
+                 proposals_after_nms,
+                 nms_thresh):
 
         super().__init__()
 

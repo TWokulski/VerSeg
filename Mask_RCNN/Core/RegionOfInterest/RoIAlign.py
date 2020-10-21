@@ -5,7 +5,8 @@ from torchvision.ops.roi_align import roi_align
 
 class RoIAlign:
 
-    def __init__(self, output_size, sampling_ratio):
+    def __init__(self, output_size,
+                 sampling_ratio):
 
         self.output_size = output_size
         self.sampling_ratio = sampling_ratio

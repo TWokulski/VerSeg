@@ -11,9 +11,16 @@ from ..loss import detection_loss, mask_loss
 
 
 class RoIHeads(nn.Module):
-    def __init__(self, box_roi_pool, box_predictor, fg_iou_thresh, bg_iou_thresh,
-                 num_samples, positive_fraction, reg_weights, score_thresh,
-                 nms_thresh, num_detections):
+    def __init__(self, box_roi_pool,
+                 box_predictor,
+                 fg_iou_thresh,
+                 bg_iou_thresh,
+                 num_samples,
+                 positive_fraction,
+                 reg_weights,
+                 score_thresh,
+                 nms_thresh,
+                 num_detections):
 
         super().__init__()
         self.box_roi_pool = box_roi_pool

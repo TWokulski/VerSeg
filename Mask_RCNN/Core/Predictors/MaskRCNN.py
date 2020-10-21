@@ -5,8 +5,9 @@ from Config import number_of_classes
 
 class MaskRCNNPredictor(nn.Sequential):
     def __init__(self, in_channels,
-                 layers=(256, 256, 256, 256),
-                 dim_reduced=256):
+                 layers,
+                 dim_reduced):
+
         dictionary = OrderedDict()
         next_feature = in_channels
 
