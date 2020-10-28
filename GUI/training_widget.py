@@ -1,9 +1,15 @@
+import bisect
+import glob
+import re
+import os
 import sys
-from PyQt5 import QtCore, QtWidgets, QtGui
-from PyQt5.QtCore import QUrl, Qt
+import time
+import torch
+import Mask_RCNN as algorithm
+from Config import *
 from PyQt5.QtGui import QIntValidator, QFont, QIcon
 from PyQt5.QtWidgets import QFileDialog, QWidget, QPushButton, QLabel, QComboBox, QTextEdit, QGroupBox, QGridLayout
-
+import Config as cfg
 import subprocess
 import os
 
@@ -127,7 +133,7 @@ class TrainingWidget(QWidget):
         self.seed_lbl.setStyleSheet("color: black")
 
         self.device_value = QComboBox(self)
-        self.device_value.addItems(["CUDA", "CPU"])
+        self.device_value.addItems(["cuda", "cpu"])
         self.device_value.setGeometry(self.starting_input_x, self.starting_lbl_y, 80, self.lbl_height)
 
         self.learning_rate_value = QTextEdit(self)
@@ -190,3 +196,74 @@ class TrainingWidget(QWidget):
 
     def get_device(self):
         return self.device_value
+
+    def get_all_params(self):
+        params = {
+            "seed": self.get_seed(),
+            "number_of_epochs": self.get_epoch(),
+            "number_of_classes": self.get_classes(),
+            "number_of_iterations": self.get_iterations(),
+            "momentum": self.get_momentum(),
+            "decay": self.get_decay(),
+            "learning_rate": self.get_learning_rate(),
+            "learning_steps": self.get_learning_steps(),
+            "device": self.get_device(),
+            "dataset_dir": self.dir_path
+        }
+        return params
+
+    def train(self):
+        self.paramiters = self.get_all_params()
+        device = torch.device(self.paramiters['device'])
+
+        train_set = algorithm.datasets(self.paramiters['dataset_dir'], "train2017", train=True)
+        indices = torch.randperm(len(train_set)).tolist()
+        train_set = torch.utils.data.Subset(train_set, indices)
+
+        val_set = algorithm.datasets(self.paramiters['dataset_dir'], "val2017", train=True)
+        model = algorithm.resnet50_for_mask_rcnn(True).to(device)
+
+        params = [p for p in model.parameters() if p.requires_grad]
+        optimizer = torch.optim.SGD(
+            params, lr=self.paramiters['learning_rate'], momentum=self.paramiters['momentum'],
+            weight_decay=self.paramiters['decay'])
+        decrease = lambda x: cfg.learning_rate_lambda ** bisect.bisect(self.paramiters['learning_steps'], x)
+
+        starting_epoch = 0
+        prefix, ext = os.path.splitext(ckpt_path)
+        ckpts = glob.glob(prefix + "-*" + ext)
+        ckpts.sort(key=lambda x: int(re.search(r"-(\d+){}".format(ext), os.path.split(x)[1]).group(1)))
+        if ckpts:
+            checkpoint = torch.load(ckpts[-1], map_location=device)
+            model.load_state_dict(checkpoint["model"])
+            optimizer.load_state_dict(checkpoint["optimizer"])
+            starting_epoch = checkpoint["epochs"]
+            del checkpoint
+            torch.cuda.empty_cache()
+
+        since = time.time()
+        print("\nalready trained: {} epochs; to {} epochs".format(starting_epoch, number_of_epochs))
+
+        for epoch in range(starting_epoch, number_of_epochs):
+            print("\nepoch: {}".format(epoch + 1))
+
+            training_epoch_time = time.time()
+            lr_epoch = decrease(epoch) * learning_rate
+            print("lr_epoch: {:.4f}, factor: {:.4f}".format(lr_epoch, decrease(epoch)))
+            iter_train = algorithm.train_one_epoch(model, optimizer, train_set, device, epoch)
+            training_epoch_time = time.time() - training_epoch_time
+
+            validation_epoch_time = time.time()
+            eval_output, iter_eval = algorithm.evaluate(model, val_set, device)
+            validation_epoch_time = time.time() - validation_epoch_time
+
+            trained_epoch = epoch + 1
+            print("training: {:.2f} s, evaluation: {:.2f} s".format(training_epoch_time, validation_epoch_time))
+            algorithm.collect_gpu_info("maskrcnn", [1 / iter_train, 1 / iter_eval])
+            print(eval_output.get_AP())
+
+            algorithm.save_ckpt(model, optimizer, trained_epoch, eval_info=str(eval_output))
+
+        print("\ntotal time of this training: {:.2f} s".format(time.time() - since))
+        if starting_epoch < number_of_epochs:
+            print("already trained: {} epochs\n".format(trained_epoch))
