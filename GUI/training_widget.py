@@ -18,6 +18,8 @@ class TrainingWidget(QWidget):
     def __init__(self, parent=None):
         super(TrainingWidget, self).__init__(parent)
 
+        self.best_model_by_maskAP = 0
+
         self.starting_lbl_y = 80
         self.starting_lbl_x = 20
         self.lbl_width = 300
@@ -216,6 +218,8 @@ class TrainingWidget(QWidget):
         self.paramiters = self.get_all_params()
         device = torch.device(self.paramiters['device'])
 
+        self.best_model_by_maskAP = None
+
         train_set = algorithm.datasets(self.paramiters['dataset_dir'], "train2017", train=True)
         indices = torch.randperm(len(train_set)).tolist()
         train_set = torch.utils.data.Subset(train_set, indices)
@@ -249,8 +253,8 @@ class TrainingWidget(QWidget):
 
             training_epoch_time = time.time()
             lr_epoch = decrease(epoch) * learning_rate
-            print("lr_epoch: {:.4f}, factor: {:.4f}".format(lr_epoch, decrease(epoch)))
-            iter_train = algorithm.train_one_epoch(model, optimizer, train_set, device, epoch)
+
+            algorithm.train_one_epoch(model, optimizer, train_set, device, epoch)
             training_epoch_time = time.time() - training_epoch_time
 
             validation_epoch_time = time.time()
@@ -258,12 +262,19 @@ class TrainingWidget(QWidget):
             validation_epoch_time = time.time() - validation_epoch_time
 
             trained_epoch = epoch + 1
-            print("training: {:.2f} s, evaluation: {:.2f} s".format(training_epoch_time, validation_epoch_time))
-            algorithm.collect_gpu_info("maskrcnn", [1 / iter_train, 1 / iter_eval])
-            print(eval_output.get_AP())
+            maskAP = eval_output.get_AP()
+            if maskAP['mask AP'] > self.best_model_by_maskAP:
+                self.best_model_by_maskAP = maskAP['mask AP']
+                pass
 
             algorithm.save_ckpt(model, optimizer, trained_epoch, eval_info=str(eval_output))
 
-        print("\ntotal time of this training: {:.2f} s".format(time.time() - since))
-        if starting_epoch < number_of_epochs:
-            print("already trained: {} epochs\n".format(trained_epoch))
+            prefix, ext = os.path.splitext(ckpt_path)
+            ckpts = glob.glob(prefix + "-*" + ext)
+            ckpts.sort(key=lambda x: int(re.search(r"-(\d+){}".format(ext), os.path.split(x)[1]).group(1)))
+            n = 3
+            if len(ckpts) > n:
+                for i in range(len(ckpts) - n):
+                    os.remove("{}".format(ckpts[i]))
+
+        total_training_time = time.time() - since

@@ -48,6 +48,14 @@ def main():
 
         algorithm.save_ckpt(model, optimizer, trained_epoch, eval_info=str(eval_output))
 
+        prefix, ext = os.path.splitext(ckpt_path)
+        ckpts = glob.glob(prefix + "-*" + ext)
+        ckpts.sort(key=lambda x: int(re.search(r"-(\d+){}".format(ext), os.path.split(x)[1]).group(1)))
+        n = 3
+        if len(ckpts) > n:
+            for i in range(len(ckpts) - n):
+                os.remove("{}".format(ckpts[i]))
+
     print("\ntotal time of this training: {:.2f} s".format(time.time() - since))
     if starting_epoch < number_of_epochs:
         print("already trained: {} epochs\n".format(trained_epoch))

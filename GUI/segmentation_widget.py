@@ -1,12 +1,15 @@
 import sys
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtCore import QUrl, Qt
-from PyQt5.QtGui import QIntValidator, QFont, QIcon
-from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QLineEdit, QComboBox, QTabWidget, QGraphicsView, QGridLayout,\
+from PyQt5.QtGui import QIntValidator, QFont, QIcon, QPixmap
+from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QLineEdit, QComboBox, QTabWidget, QGridLayout,\
     QGroupBox, QFileDialog, QTextEdit
 
 import subprocess
 import os
+import time
+import torch
+import Mask_RCNN as algorithm
 
 
 class SegmentationWidget(QWidget):
@@ -16,8 +19,8 @@ class SegmentationWidget(QWidget):
         self.back_to_menu_btn = QPushButton("Back", self)
         self.back_to_menu_btn.setGeometry(20, 20, 100, 40)
 
-        self.original_img_place = QGraphicsView(self)
-        self.mask_img_place = QGraphicsView(self)
+        self.original_img_place = QLabel(self)
+        self.mask_img_place = QLabel(self)
 
         self.pictures_tabs = QTabWidget(self)
         self.pictures_tabs.setGeometry(40, 120, 600, 450)
@@ -111,3 +114,42 @@ class SegmentationWidget(QWidget):
     def get_model_path(self):
         self.model_path, _ = QFileDialog.getOpenFileName(self, 'Choose a model file', '', 'Model files | *.pth;')
         self.path_content.setText(self.model_path)
+
+    def get_num_classes(self):
+        return int(self.num_class_value.toPlainText())
+
+    def visualise(self):
+        device = torch.device('cpu')
+
+        validation_dataset = algorithm.datasets(self.dir_path, 'val2017', True)
+        classes = validation_dataset.classes
+
+        iou_types = ['bbox', 'segm']
+        coco_evaluator = algorithm.CocoEvaluator(validation_dataset, iou_types)
+
+        indices = torch.randperm(len(validation_dataset)).tolist()
+        validation_dataset = torch.utils.data.Subset(validation_dataset, indices)
+
+        model = algorithm.maskrcnn_resnet50(True, self.get_num_classes).to(device)
+
+        if os.path.exists(self.get_model_path()):
+            checkpoint = torch.load(self.get_model_path(), map_location=device)
+            model.load_state_dict(checkpoint['model'])
+            del checkpoint
+            torch.cuda.empty_cache()
+
+        model.eval()
+        for (image, target) in validation_dataset:
+            with torch.no_grad():
+                result = model(image)
+
+            result = {k: v.cpu() for k, v in result.items()}
+            res = {target['image_id'].item(): result}
+            coco_evaluator.update(res)
+
+            org_im, mask_im = algorithm.show(image, result, classes)
+
+            im1 = QPixmap(org_im[0])
+            im2 = QPixmap(mask_im[1])
+            self.original_img_place.setPixmap(im1)
+            self.mask_img_place.setPixmap(im2)
