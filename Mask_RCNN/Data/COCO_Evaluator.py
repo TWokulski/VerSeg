@@ -115,4 +115,3 @@ class CocoEvaluator:
                 ]
             )
         return coco_results
-

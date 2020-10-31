@@ -58,4 +58,3 @@ class AnchorGenerator:
             self._cache.clear()
         self._cache[key] = anchor
         return anchor
-
