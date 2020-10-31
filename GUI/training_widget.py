@@ -215,6 +215,8 @@ class TrainingWidget(QWidget):
             "checkpoint_path": './ckpt',
             "learning_rate_lambda": 0.1,
             "model_path": './model',
+            "iterations_to_warmup": 800,
+            "result_path": './result'
         }
         return params
 
