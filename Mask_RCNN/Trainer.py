@@ -5,7 +5,7 @@ from .Data import CocoEvaluator, prepare_for_coco
 from .Tools import CocoConversion
 
 
-def train_one_epoch(model, optimizer, data_loader, device, epoch, args):
+def train_epoch(model, optimizer, data_loader, device, epoch, args):
     for p in optimizer.param_groups:
         p["lr"] = args.lr_epoch
 
@@ -35,7 +35,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, args):
             break
 
 
-def evaluate(model, data_loader, device, args, generate=True):
+def evaluate(model, data_loader, device, args):
     dataset = data_loader
     iou_types = ["bbox", "segm"]
     coco_evaluator = CocoEvaluator(dataset.coco, iou_types)
