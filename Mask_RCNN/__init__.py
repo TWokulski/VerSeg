@@ -1,20 +1,20 @@
 try:
-    from Mask_RCNN.Core.Engine import resnet50_for_mask_rcnn
+    from .Core.Engine import resnet50_for_mask_rcnn
 except ImportError:
     pass
 
 try:
-    from Mask_RCNN.Tools import *
+    from .Tools import *
 except ImportError:
     pass
 
 try:
-    from Mask_RCNN.Trainer import *
+    from .Trainer import *
 except ImportError:
     pass
 
 try:
-    from Mask_RCNN.Data import *
+    from .Data import *
 except ImportError:
     pass
 
