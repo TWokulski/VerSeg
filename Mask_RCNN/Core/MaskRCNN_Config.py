@@ -1,5 +1,4 @@
 
-
 rpn_fg_iou_thresh = 0.7
 rpn_bg_iou_thresh = 0.3
 rpn_num_samples = 256
@@ -24,3 +23,8 @@ anchor_ratios = (0.5, 1, 2)
 
 layers = (256, 256, 256, 256)
 dim_reduced = 256
+
+model_url = {
+            'maskrcnn_resnet50_fpn_coco':
+                'https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth',
+        }
