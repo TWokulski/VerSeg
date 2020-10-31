@@ -1,18 +1,10 @@
-import bisect
-import glob
-import re
-import os
-import sys
-import time
-import torch
-import Mask_RCNN as algorithm
-from Config import *
+
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication
-from .GUI.main_menu_widget import MainMenuWidget
-from .GUI.training_widget import TrainingWidget
-from .GUI.segmentation_widget import SegmentationWidget
+from GUI import MainMenuWidget
+from GUI import TrainingWidget
+from GUI import SegmentationWidget
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -34,7 +26,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def choose_Training(self):
         create_model_widget = TrainingWidget(self)
         create_model_widget.back_to_menu_btn.clicked.connect(self.choose_main_win)
-        create_model_widget.start_training_btn.clicked.connect(self.train)
         self.central_widget.addWidget(create_model_widget)
         self.central_widget.setCurrentWidget(create_model_widget)
 

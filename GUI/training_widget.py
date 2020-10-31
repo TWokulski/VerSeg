@@ -93,6 +93,7 @@ class TrainingWidget(QWidget):
         self.back_to_menu_btn.setGeometry(20, 20, 100, self.lbl_height + 10)
 
         self.start_training_btn.setGeometry(300, 650, 424, self.lbl_height + 20)
+        self.start_training_btn.clicked.connect(self.train)
 
         self.validating_btn.setGeometry(self.starting_lbl_x + 20, self.starting_lbl_y + 420, 300, self.lbl_height + 10)
 
@@ -173,7 +174,7 @@ class TrainingWidget(QWidget):
         self.path_content.setText(self.dir_path)
 
     def get_seed(self):
-        return self.seed_value
+        return int(self.seed_value.toPlainText())
 
     def get_epoch(self):
         return self.epoch_value
@@ -221,15 +222,33 @@ class TrainingWidget(QWidget):
         return params
 
     def train(self):
-        self.parameters = self.get_all_params()
+        # self.parameters = self.get_all_params()
+        self.parameters = {
+            "seed": 1,
+            "number_of_epochs": 2,
+            "number_of_classes": 2,
+            "number_of_iterations": 30,
+            "momentum": 0.9,
+            "decay": 0.0001,
+            "learning_rate": 0.01,
+            "learning_steps": [1,5],
+            "device": 'cpu',
+            "dataset_dir": 'Dataset',
+            "publishing_losses_frequency": 100,
+            "checkpoint_path": './ckpt',
+            "learning_rate_lambda": 0.1,
+            "model_path": './model',
+            "iterations_to_warmup": 800,
+            "result_path": './result'
+        }
         device = torch.device(self.parameters['device'])
 
-        train_set = algorithm.datasets(self.parameters['dataset_dir'], "Train", train=True)
+        train_set = algorithm.COCODataset(self.parameters['dataset_dir'], "Train", train=True)
         indices = torch.randperm(len(train_set)).tolist()
         train_set = torch.utils.data.Subset(train_set, indices)
 
-        val_set = algorithm.datasets(self.parameters['dataset_dir'], "Validation", train=True)
-        model = algorithm.resnet50_for_mask_rcnn(True).to(device)
+        val_set = algorithm.COCODataset(self.parameters['dataset_dir'], "Validation", train=True)
+        model = algorithm.resnet50_for_mask_rcnn(True, self.parameters['number_of_classes']).to(device)
 
         params = [p for p in model.parameters() if p.requires_grad]
         optimizer = torch.optim.SGD(

@@ -9,12 +9,11 @@ from Mask_RCNN.Core.Predictors import ResBackbone
 from Mask_RCNN.Core.Predictors import FastRCNNPredictor
 from Mask_RCNN.Core.Predictors import MaskRCNNPredictor
 from Mask_RCNN.Core.MaskRCNN_Config import *
-from Config import *
 
 
 class MaskRCNN(nn.Module):
 
-    def __init__(self, backbone):
+    def __init__(self, backbone, number_of_classes):
 
         super().__init__()
         self.backbone = backbone
@@ -69,9 +68,9 @@ class MaskRCNN(nn.Module):
             return result
 
 
-def resnet50_for_mask_rcnn(use_pre_trained):
-    backbone = ResBackbone('resnet50', True)
-    model = MaskRCNN(backbone)
+def resnet50_for_mask_rcnn(use_pre_trained, number_of_classes):
+    backbone = ResBackbone('resnet50')
+    model = MaskRCNN(backbone, number_of_classes)
 
     if use_pre_trained:
         model_state_dict = load_url(model_url['maskrcnn_resnet50_fpn_coco'])
@@ -82,7 +81,10 @@ def resnet50_for_mask_rcnn(use_pre_trained):
             pre_trained_msd.pop(del_idx - i)
 
         msd = model.state_dict()
+        skip_list = [271, 272, 273, 274, 279, 280, 281, 282, 293, 294]
         for i, name in enumerate(msd):
+            if i in skip_list:
+                continue
             msd[name].copy_(pre_trained_msd[i])
 
         model.load_state_dict(msd)

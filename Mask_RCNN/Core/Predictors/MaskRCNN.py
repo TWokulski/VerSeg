@@ -1,12 +1,12 @@
 from torch import nn
 from collections import OrderedDict
-from Config import number_of_classes
 
 
 class MaskRCNNPredictor(nn.Sequential):
     def __init__(self, in_channels,
                  layers,
-                 dim_reduced):
+                 dim_reduced,
+                 number_of_classes):
 
         dictionary = OrderedDict()
         next_feature = in_channels
