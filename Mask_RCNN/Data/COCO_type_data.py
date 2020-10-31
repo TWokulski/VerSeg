@@ -1,19 +1,19 @@
 import os
 import torch
-import Config as cfg
 from PIL import Image
 from pycocotools.coco import COCO
 from .General_dataset import GeneralizedDataset
 
 
 class COCODataset(GeneralizedDataset):
-    def __init__(self, split, train=False):
+    def __init__(self, dataset_dir, split, train):
         super().__init__()
 
+        self.dataset_dir = dataset_dir
         self.split = split
         self.train = train
 
-        annotations_file = os.path.join(cfg.dataset_dir, ".{}/annotations.json".format(split))
+        annotations_file = os.path.join(self.dataset_dir, "{}/annotations.json".format(split))
         self.coco = COCO(annotations_file)
         self.ids = [str(k) for k in self.coco.imgs]
 
@@ -22,7 +22,9 @@ class COCODataset(GeneralizedDataset):
 
         self.annotations_labels = {self.classes.index(v): k for k, v in self._classes.items()}
 
-        checked_id_file = os.path.join(cfg.dataset_dir, "checked_{}.txt".format(split))
+        checked_id_file = os.path.join(self.dataset_dir, "checked_{}.txt".format(split))
+
+        print(checked_id_file)
 
         if train:
             if not os.path.exists(checked_id_file):
@@ -32,7 +34,7 @@ class COCODataset(GeneralizedDataset):
     def get_image(self, img_id):
         img_id = int(img_id)
         img_info = self.coco.imgs[img_id]
-        image = Image.open(os.path.join(cfg.dataset_dir, "{}".format(self.split), img_info["file_name"]))
+        image = Image.open(os.path.join(self.dataset_dir, "{}".format(self.split), img_info["file_name"]))
         return image.convert("RGB")
 
     @staticmethod
