@@ -45,5 +45,12 @@ class CocoConversion:
         txt = str(self)
         values = re.findall(r"(\d{3})\n", txt)
         values = [int(v) / 10 for v in values]
-        result = {"bbox AP": values[0], "mask AP": values[12]}
+        result = {"bbox AP": values[0], "mask AP": values[11]}
+        return result
+
+    def get_AR(self):
+        txt = str(self)
+        values = re.findall(r"(\d{3})\n", txt)
+        values = [int(v) / 10 for v in values]
+        result = {"bbox AR": values[8], "mask AR": values[19]}
         return result
