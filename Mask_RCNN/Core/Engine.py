@@ -8,6 +8,7 @@ from Mask_RCNN.Core.RegionOfInterest import RoIHeads
 from Mask_RCNN.Core.Predictors import ResBackbone
 from Mask_RCNN.Core.Predictors import FastRCNNPredictor
 from Mask_RCNN.Core.Predictors import MaskRCNNPredictor
+from Mask_RCNN.Core.Utils import Processing
 from Mask_RCNN.Core.MaskRCNN_Config import *
 
 
@@ -51,10 +52,18 @@ class MaskRCNN(nn.Module):
 
         self.head.mask_predictor = MaskRCNNPredictor(out_channels, layers, dim_reduced, number_of_classes)
 
+        self.transformer = Processing(
+            min_size=800, max_size=1333,
+            image_mean=[0.485, 0.456, 0.406],
+            image_std=[0.229, 0.224, 0.225])
+
     def forward(self, image, target=None):
         ori_image_shape = image.shape[-2:]
 
-        image, target = self.transformer(image, target)
+        image = self.transformer.normalize(image)
+        image, target = self.transformer.resize(image, target)
+        image = self.transformer.batched_image(image)
+
         image_shape = image.shape[-2:]
         feature = self.backbone(image)
 

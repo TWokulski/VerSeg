@@ -10,6 +10,15 @@ class Processing:
         self.image_mean = image_mean
         self.image_std = image_std
 
+    def normalize(self, image):
+        if image.shape[0] == 1:
+            image = image.repeat(3, 1, 1)
+
+        dtype, device = image.dtype, image.device
+        mean = torch.tensor(self.image_mean, dtype=dtype, device=device)
+        std = torch.tensor(self.image_std, dtype=dtype, device=device)
+        return (image - mean[:, None, None]) / std[:, None, None]
+
     def resize(self, image, target):
         ori_image_shape = image.shape[-2:]
         min_size = float(min(image.shape[-2:]))
