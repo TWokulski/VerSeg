@@ -22,7 +22,7 @@ def mask_loss(mask_logit, proposal, matched_idx, label, gt_mask):
 
     M = mask_logit.shape[-1]
     gt_mask = gt_mask[:, None].to(roi)
-    mask_target = roi_align(gt_mask, roi, 1., M, M, -1, False)[:, 0]
+    mask_target = roi_align(gt_mask, roi, M, 1., -1)[:, 0]
 
     idx = torch.arange(label.shape[0], device=label.device)
     m_loss = F.binary_cross_entropy_with_logits(mask_logit[idx, label], mask_target)

@@ -22,3 +22,8 @@ try:
     from .Coder import process_box
 except ImportError:
     pass
+
+try:
+    from .Processing import Processing
+except ImportError:
+    pass

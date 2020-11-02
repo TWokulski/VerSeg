@@ -29,5 +29,6 @@ class RoIAlign:
         roi = torch.cat((idx, proposal), dim=1)
 
         self.setup_scale(feature.shape[-2:], image_shape)
-        return roi_align(feature.to(roi), roi, self.spatial_scale, self.output_size[0],
-                         self.output_size[1], self.sampling_ratio, False)
+        return roi_align(feature.to(roi), roi, self.output_size, self.spatial_scale,
+                         self.sampling_ratio)
+

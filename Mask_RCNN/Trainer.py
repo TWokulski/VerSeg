@@ -25,7 +25,9 @@ def train_epoch(model, optimizer, data_loader, device, epoch, parameters):
         image = image.to(device)
         target = {k: v.to(device) for k, v in target.items()}
         losses = model(image, target)
+        # print(losses)
         total_loss = sum(losses.values())
+        # print(total_loss)
         total_loss.backward()
         optimizer.step()
         optimizer.zero_grad()

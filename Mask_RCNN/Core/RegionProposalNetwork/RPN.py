@@ -55,7 +55,7 @@ class RegionProposalNetwork(nn.Module):
         iou = box_iou(gt_box, anchor)
         label, matched_idx = self.proposal_matcher(iou)
 
-        pos_idx, neg_idx = self.fg_bg_sampler(label)
+        pos_idx, neg_idx = self.sampler(label)
         idx = torch.cat((pos_idx, neg_idx))
         regression_target = self.box_coder.encode(gt_box[matched_idx[pos_idx]], anchor[pos_idx])
 
@@ -67,7 +67,7 @@ class RegionProposalNetwork(nn.Module):
     def forward(self, feature, image_shape, target=None):
         if target is not None:
             gt_box = target['boxes']
-        anchor = self.anchor_generator(feature, image_shape)
+        anchor = self.anchor_gen(feature, image_shape)
 
         classifier, delta = self.head(feature)
         classifier = classifier.permute(0, 2, 3, 1).flatten()
