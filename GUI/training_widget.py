@@ -227,11 +227,11 @@ class TrainingWidget(QWidget):
             "seed": 1,
             "number_of_epochs": 2,
             "number_of_classes": 2,
-            "number_of_iterations": 30,
+            "number_of_iterations": 1,
             "momentum": 0.9,
             "decay": 0.0001,
             "learning_rate": 0.01,
-            "learning_steps": [1,5],
+            "learning_steps": [1, 5],
             "device": 'cpu',
             "dataset_dir": 'Dataset',
             "publishing_losses_frequency": 100,
@@ -285,16 +285,18 @@ class TrainingWidget(QWidget):
 
             validation_epoch_time = time.time()
             eval_output = algorithm.evaluate(model, val_set, device, self.parameters)
+            print(eval_output)
             validation_epoch_time = time.time() - validation_epoch_time
 
             trained_epoch = epoch + 1
             maskAP = eval_output.get_AP()
+            print(maskAP)
             if maskAP['mask AP'] > self.best_model_by_maskAP:
                 self.best_model_by_maskAP = maskAP['mask AP']
                 algorithm.save_best(model, optimizer, trained_epoch,
                                     self.parameters['model_path'], eval_info=str(eval_output))
 
-            algorithm.save_ckpt(model, optimizer, trained_epoch,
+            algorithm.save_checkpoint(model, optimizer, trained_epoch,
                                 self.parameters['checkpoint_path'], eval_info=str(eval_output))
 
             prefix, ext = os.path.splitext(self.parameters['checkpoint_path'])

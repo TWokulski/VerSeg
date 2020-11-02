@@ -73,7 +73,7 @@ class MaskRCNN(nn.Module):
         if self.training:
             return dict(**rpn_losses, **roi_losses)
         else:
-            result = self.transformer.postprocess(result, image_shape, ori_image_shape)
+            result = self.transformer.post_processing(result, image_shape, ori_image_shape)
             return result
 
 

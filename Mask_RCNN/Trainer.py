@@ -67,7 +67,7 @@ def generate_results(model, data_loader, device, parameters):
         iterations = len(data_loader)
     else:
         iterations = parameters["number_of_iterations"]
-    ann_labels = data_loader.ann_labels
+    ann_labels = data_loader.annotations_labels
 
     coco_results = []
     model.eval()
@@ -76,7 +76,7 @@ def generate_results(model, data_loader, device, parameters):
         image = image.to(device)
         target = {k: v.to(device) for k, v in target.items()}
 
-        torch.cuda.synchronize()
+        #torch.cuda.synchronize()
         output = model(image)
 
         prediction = {target["image_id"].item(): {k: v.cpu() for k, v in output.items()}}

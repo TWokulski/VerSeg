@@ -96,7 +96,7 @@ class RoIHeads(nn.Module):
             classifier_loss, box_reg_loss = detection_loss(class_logit, box_regression, label, regression_target)
             losses = dict(roi_classifier_loss=classifier_loss, roi_box_loss=box_reg_loss)
         else:
-            result = self.fastrcnn_inference(class_logit, box_regression, proposal, image_shape)
+            result = self.detect(class_logit, box_regression, proposal, image_shape)
 
         if (self.mask_roi_pool is not None) and (self.mask_predictor is not None):
             if self.training:
