@@ -19,6 +19,6 @@ except ImportError:
     pass
 
 try:
-    from .visualize import *
+    from .Visualise import *
 except ImportError:
     pass

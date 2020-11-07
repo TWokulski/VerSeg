@@ -1,13 +1,6 @@
-import sys
-from PyQt5 import QtCore, QtWidgets, QtGui
-from PyQt5.QtCore import QUrl, Qt
 from PyQt5.QtGui import QIntValidator, QFont, QIcon, QPixmap
 from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QLineEdit, QComboBox, QTabWidget, QGridLayout,\
     QGroupBox, QFileDialog, QTextEdit
-
-import subprocess
-import os
-import time
 import torch
 import Mask_RCNN as algorithm
 
@@ -119,37 +112,53 @@ class SegmentationWidget(QWidget):
         return int(self.num_class_value.toPlainText())
 
     def visualise(self):
+        val_samples = 1
+        data_dir = 'Dataset'
+        num_classes = 2
+        model_path = 'ckpt/-2'
+
         device = torch.device('cpu')
 
-        validation_dataset = algorithm.datasets(self.dir_path, 'val2017', True)
-        classes = validation_dataset.classes
-
+        dataset = algorithm.COCODataset(data_dir, 'Validation', True)
+        self.classes = dataset.classes
+        coco = dataset.coco
         iou_types = ['bbox', 'segm']
-        coco_evaluator = algorithm.CocoEvaluator(validation_dataset, iou_types)
+        self.evaluator = algorithm.CocoEvaluator(coco, iou_types)
 
-        indices = torch.randperm(len(validation_dataset)).tolist()
-        validation_dataset = torch.utils.data.Subset(validation_dataset, indices)
+        indices = torch.randperm(len(dataset)).tolist()
+        dataset = torch.utils.data.Subset(dataset, indices[:val_samples])
+        self.model = algorithm.resnet50_for_mask_rcnn(True, num_classes).to(device)
 
-        model = algorithm.maskrcnn_resnet50(True, self.get_num_classes).to(device)
+        user_model = torch.load(model_path, map_location=device)
+        self.model.load_state_dict(user_model['model'])
+        del user_model
+        self.model.eval()
 
-        if os.path.exists(self.get_model_path()):
-            checkpoint = torch.load(self.get_model_path(), map_location=device)
-            model.load_state_dict(checkpoint['model'])
-            del checkpoint
-            torch.cuda.empty_cache()
+        gt_list = []
+        pred_list = []
+        org_im_list = []
 
-        model.eval()
-        for (image, target) in validation_dataset:
-            with torch.no_grad():
-                result = model(image)
+        for (image, target) in dataset:
+            g, p = self.show_images(image, target)
+            gt_list.append(g)
+            pred_list.append(p)
+            org_im_list.append(image)
 
-            result = {k: v.cpu() for k, v in result.items()}
-            res = {target['image_id'].item(): result}
-            coco_evaluator.update(res)
+        im1 = QPixmap(org_im_list[0])
+        im2 = QPixmap(gt_list[0])
+        im3 = QPixmap(pred_list[0])
+        self.original_img_place.setPixmap(im1)
+        self.mask_img_place.setPixmap(im3)
 
-            org_im, mask_im = algorithm.show(image, result, classes)
+    def show_images(self, image, target):
+        with torch.no_grad():
+            result = self.model(image)
 
-            im1 = QPixmap(org_im[0])
-            im2 = QPixmap(mask_im[1])
-            self.original_img_place.setPixmap(im1)
-            self.mask_img_place.setPixmap(im2)
+        result = {k: v.cpu() for k, v in result.items()}
+        res = {target['image_id'].item(): result}
+        self.evaluator.update(res)
+
+        gt_true = algorithm.show_single_target(target['masks'], image)
+        prediction = algorithm.show_single(image, result, self.classes)
+        return gt_true, prediction
+

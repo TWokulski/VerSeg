@@ -23,7 +23,6 @@ class CocoEvaluator:
         for iou_type in self.iou_types:
             coco_eval = self.coco_eval[iou_type]
             coco_dt = self.coco_gt.loadRes(coco_results) if coco_results else COCO()
-
             coco_eval.cocoDt = coco_dt
             coco_eval.params.imgIds = image_ids
             coco_eval.evaluate()

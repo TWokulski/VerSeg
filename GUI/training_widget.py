@@ -217,7 +217,7 @@ class TrainingWidget(QWidget):
             "learning_rate_lambda": 0.1,
             "model_path": './model',
             "iterations_to_warmup": 800,
-            "result_path": './result'
+            "result_path": 'ckpt/result'
         }
         return params
 
@@ -235,11 +235,11 @@ class TrainingWidget(QWidget):
             "device": 'cpu',
             "dataset_dir": 'Dataset',
             "publishing_losses_frequency": 100,
-            "checkpoint_path": './ckpt',
+            "checkpoint_path": 'ckpt/',
             "learning_rate_lambda": 0.1,
-            "model_path": './model',
+            "model_path": 'model/',
             "iterations_to_warmup": 800,
-            "result_path": './result'
+            "result_path": 'ckpt/result'
         }
         device = torch.device(self.parameters['device'])
 
@@ -285,7 +285,7 @@ class TrainingWidget(QWidget):
 
             validation_epoch_time = time.time()
             eval_output = algorithm.evaluate(model, val_set, device, self.parameters)
-            print(eval_output)
+            # print(eval_output)
             validation_epoch_time = time.time() - validation_epoch_time
 
             trained_epoch = epoch + 1
@@ -297,7 +297,7 @@ class TrainingWidget(QWidget):
                                     self.parameters['model_path'], eval_info=str(eval_output))
 
             algorithm.save_checkpoint(model, optimizer, trained_epoch,
-                                self.parameters['checkpoint_path'], eval_info=str(eval_output))
+                                      self.parameters['checkpoint_path'], eval_info=str(eval_output))
 
             prefix, ext = os.path.splitext(self.parameters['checkpoint_path'])
             checkpoints = glob.glob(prefix + "-*" + ext)
