@@ -1,8 +1,8 @@
 import torch
 import matplotlib.pyplot as plt
 from matplotlib import patches
-import cv2
 import numpy as np
+import cv2
 
 
 def xyxy2xywh(box):
@@ -92,7 +92,7 @@ def show_single(image, target, classes):
     plt.show()
 
 
-def show_single_target(image, target):
+def show_single_target(image, target, bouding):
     target = target.clone()
     image = image.clone()
 
@@ -100,7 +100,7 @@ def show_single_target(image, target):
     new_image = image.cpu().numpy()
     new_image = new_image.transpose(1, 2, 0)
 
-    ax = plt.subplot()
+    #ax = plt.subplot()
     target = target.clamp(0, 1)
     mask_arr = target.cpu().numpy()
     mask = np.zeros((646, 1096, 3))
@@ -110,10 +110,25 @@ def show_single_target(image, target):
         t[:, :] = t[:, :] * [255, 0, 0]
         mask += t
     new_image += mask
-    plt.imshow(new_image)
-    plt.axis("off")
+    color = (255, 0, 0)
+    boxes = xyxy2xywh(bouding).cpu().detach()
+    box = np.zeros((646, 1096, 3))
+    for i, b in enumerate(boxes):
+        b = b.tolist()
+        b = list(map(int, b))
+        p1 = (b[0], b[1])
+        p2 = (b[0] + b[2], b[1] + b[3])
+        box = cv2.rectangle(img=box, pt1=p1, pt2=p2, color=color, thickness=2)
+    new_image += box
 
-    plt.savefig('fig.png', bbox_inches='tight')
+    cv2.imshow('image', new_image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+    #plt.imshow(new_image)
+    #plt.axis("off")
+
+    #plt.savefig('fig.png', bbox_inches='tight')
 
 '''
 def draw_img(image, target, classes):

@@ -30,6 +30,11 @@ for(image, target) in dataset:
     result = {k: v.cpu() for k, v in result.items()}
     res = {target['image_id'].item(): result}
     evaluator.update(res)
+    # print(target['boxes'])
+    b = algorithm.xyxy2xywh(target['boxes'])
+    # print(b.cpu().detach())
+    # for i, j in enumerate(b):
+        # print(i, j)
 
-    algorithm.show_single_target(image, target['masks'])
+    algorithm.show_single_target(image, target['masks'], target['boxes'])
     # algorithm.show(image, result, classes)
