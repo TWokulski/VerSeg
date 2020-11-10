@@ -2,6 +2,7 @@ import torch
 import matplotlib.pyplot as plt
 from matplotlib import patches
 import numpy as np
+from Config import COLORS
 import cv2
 
 
@@ -92,6 +93,53 @@ def show_single(image, target, classes):
     plt.show()
 
 
+def draw_image(image, target, classes=None, gt=False):
+    image = image.clone()
+    color = (0, 0, 255)
+    image = image.clamp(0, 1)
+    new_image = image.cpu().numpy()
+    new_image = new_image.transpose(1, 2, 0)
+
+    if target:
+        box_image = np.zeros((646, 1096, 3))
+        if "boxes" in target:
+            boxes = target["boxes"]
+            boxes = xyxy2xywh(boxes).cpu().detach()
+            for i, b in enumerate(boxes):
+                b = b.tolist()
+                b = list(map(int, b))
+                p1 = (b[0], b[1])
+                p2 = (b[0] + b[2], b[1] + b[3])
+                box_image = cv2.rectangle(img=box_image, pt1=p1, pt2=p2, color=color, thickness=2)
+            new_image += box_image
+
+        masks = target["masks"]
+        masks = masks.clamp(0, 1)
+        mask_arr = masks.cpu().numpy()
+        mask_image = np.zeros((646, 1096, 3))
+        if gt:
+            for m in mask_arr:
+                m = np.array(m).reshape(646, 1096, 1)
+                m = np.dstack((m, m, m))
+                m[:, :] = m[:, :] * [255, 0, 0]
+                mask_image += m
+            new_image += mask_image
+        else:
+            index = 1
+            for m in mask_arr:
+                m = np.array(m).reshape(646, 1096, 1)
+                if index < 81:
+                    m = m * COLORS[index]/255
+                else:
+                    m = m * COLORS[index]/255
+                index += 1
+                mask_image += m
+            new_image += mask_image
+        cv2.imshow('image', new_image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+
 def show_single_target(image, target, bouding):
     target = target.clone()
     image = image.clone()
@@ -106,8 +154,9 @@ def show_single_target(image, target, bouding):
     mask = np.zeros((646, 1096, 3))
     for t in mask_arr:
         t = np.array(t).reshape(646, 1096, 1)
-        t = np.dstack((t, t, t))
-        t[:, :] = t[:, :] * [255, 0, 0]
+        # t = np.dstack((t, t, t))
+        t = t * COLORS[57]/255
+        print(t.shape)
         mask += t
     new_image += mask
     color = (255, 0, 0)

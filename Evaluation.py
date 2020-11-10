@@ -35,6 +35,6 @@ for(image, target) in dataset:
     # print(b.cpu().detach())
     # for i, j in enumerate(b):
         # print(i, j)
-
-    algorithm.show_single_target(image, target['masks'], target['boxes'])
+    algorithm.draw_image(image, target, classes, False)
+    # algorithm.show_single_target(image, target['masks'], target['boxes'])
     # algorithm.show(image, result, classes)
