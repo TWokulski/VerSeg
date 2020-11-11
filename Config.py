@@ -10,8 +10,8 @@ class Configuration:
         self.learning_rate_lambda = 0.1
         self.momentum = 0.9
         self.decay = 0.0002
-        self.number_of_epochs = 80
-        self.iterations = 25
+        self.number_of_epochs = 2
+        self.iterations = 3
         self.publishing_losses_frequency = 100
         self.ckpt_path = 'ckpt'
         self.dataset_dir = 'Dataset'

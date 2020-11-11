@@ -31,6 +31,7 @@ def main():
     }
 
     device = torch.device(parameters['device'])
+    best_model_by_maskAP = 0
 
     train_set = algorithm.COCODataset(parameters['dataset_dir'], "Train", train=True)
     indices = torch.randperm(len(train_set)).tolist()

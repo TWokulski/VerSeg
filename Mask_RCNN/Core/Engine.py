@@ -58,7 +58,7 @@ class MaskRCNN(nn.Module):
             image_std=[0.229, 0.224, 0.225])
 
     def forward(self, image, target=None):
-        ori_image_shape = image.shape[-2:]
+        original_image_shape = image.shape[-2:]
 
         image = self.transformer.normalize(image)
         image, target = self.transformer.resize(image, target)
@@ -73,8 +73,18 @@ class MaskRCNN(nn.Module):
         if self.training:
             return dict(**rpn_losses, **roi_losses)
         else:
-            result = self.transformer.post_processing(result, image_shape, ori_image_shape)
+            result = self.transformer.post_processing(result, image_shape, original_image_shape)
             return result
+
+
+from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
+
+
+def resnet50fpn_for_mask_rcnn(use_pre_trained, number_of_classes):
+    backbone = resnet_fpn_backbone('resnet50', pretrained=False)
+    model = MaskRCNN(backbone, number_of_classes)
+
+    return model
 
 
 def resnet50_for_mask_rcnn(use_pre_trained, number_of_classes):
