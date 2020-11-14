@@ -1,3 +1,4 @@
+import sys
 
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QIcon
@@ -48,4 +49,4 @@ if __name__ == '__main__':
     app = QApplication([])
     window = MainWindow()
     window.show()
-    app.exec_()
+    sys.exit(app.exec_())

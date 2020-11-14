@@ -1,4 +1,3 @@
-import os
 import re
 import torch
 
@@ -12,8 +11,7 @@ def save_checkpoint(model, optimizer, epochs, checkpoint_path, **kwargs):
     for k, v in kwargs.items():
         checkpoint[k] = v
 
-    # prefix, ext = os.path.splitext(checkpoint_path)
-    checkpoint_path = "{}-{}{}".format((checkpoint_path + 'ckpt'), epochs, '.pth')
+    checkpoint_path = "{}-{}".format(checkpoint_path, epochs)
     torch.save(checkpoint, checkpoint_path)
 
 
@@ -22,12 +20,10 @@ def save_best(model, optimizer, epochs, model_path, **kwargs):
             "optimizer": optimizer.state_dict(),
             "epochs": epochs
             }
-
     for k, v in kwargs.items():
         best[k] = v
 
-    # prefix, ext = os.path.splitext(model_path)
-    model_path = "{}-{}{}".format((model_path + 'best'), epochs, 'pth')
+    model_path = "{}-{}{}".format((model_path + 'best'), epochs, '.pth')
     torch.save(best, model_path)
 
 
