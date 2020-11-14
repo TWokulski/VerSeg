@@ -25,9 +25,9 @@ def main():
         "publishing_losses_frequency": 100,
         "checkpoint_path": cfg.ckpt_path,
         "learning_rate_lambda": cfg.learning_rate_lambda,
-        "model_path": 'model/',
+        "model_path": cfg.model_path,
         "iterations_to_warmup": 800,
-        "result_path": 'ckpt/result'
+        "result_path": cfg.result_path
     }
 
     device = torch.device(parameters['device'])

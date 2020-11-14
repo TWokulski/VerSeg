@@ -3,7 +3,6 @@ import numpy as np
 
 class Configuration:
     def __init__(self):
-        self.using_cuda = False
         self.device = 'cuda'
         self.learning_rate = 0.00125
         self.learning_rate_steps = [40, 70]
@@ -11,14 +10,15 @@ class Configuration:
         self.momentum = 0.9
         self.decay = 0.0002
         self.number_of_epochs = 2
-        self.iterations = 3
         self.publishing_losses_frequency = 100
-        self.ckpt_path = 'ckpt'
-        self.dataset_dir = 'Dataset'
+        self.ckpt_path = 'ckpt/'
+        self.dataset_dir = 'Dataset/'
+        self.model_path = 'model/best'
         self.seed = 1234
         self.learning_epoch = 0.1
         self.number_of_iterations = 10
         self.number_of_classes = 2
+        self.result_path = 'ckpt/result.pth'
 
 
 COLORS = np.array([[0, 0, 0], [244, 67, 54], [233, 30, 99], [156, 39, 176], [103, 58, 183], [100, 30, 60],
@@ -38,5 +38,3 @@ COLORS = np.array([[0, 0, 0], [244, 67, 54], [233, 30, 99], [156, 39, 176], [103
                    [255, 155, 0], [155, 255, 0], [0, 155, 255], [0, 255, 155], [18, 5, 40],
                    [120, 120, 255], [255, 58, 30], [60, 45, 60], [75, 27, 244], [128, 25, 70]], dtype='uint8')
 
-
-print(COLORS[2])
