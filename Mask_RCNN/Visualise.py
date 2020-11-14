@@ -16,7 +16,7 @@ def xyxy2xywh(box):
 
 
 def factor(n, base=1):
-    base = base * 0.7 ** (n // 6)  # mask 0.8
+    base = base * 0.7 ** (n // 6)
     i = n % 6
     if i < 3:
         f = [0, 0, 0]
@@ -86,58 +86,84 @@ def show_single(image, target, classes):
                         horizontalalignment="left", verticalalignment="bottom",
                         bbox=dict(boxstyle="square", fc="black", lw=1, alpha=1)
                     )
-
                 rect = patches.Rectangle(b[:2], b[2], b[3], linewidth=2, edgecolor=factor(index), facecolor="none")
                 ax.add_patch(rect)
-
     plt.show()
 
 
-def draw_image(image, target, classes=None, gt=False):
+def draw_image(image, target=None, result=None, classes=None):
     image = image.clone()
-    color = (0, 0, 255)
     image = image.clamp(0, 1)
     new_image = image.cpu().numpy()
     new_image = new_image.transpose(1, 2, 0)
+    shape = new_image.shape
 
     if target:
-        box_image = np.zeros((646, 1096, 3))
         if "boxes" in target:
             boxes = target["boxes"]
-            boxes = xyxy2xywh(boxes).cpu().detach()
-            for i, b in enumerate(boxes):
-                b = b.tolist()
-                b = list(map(int, b))
-                p1 = (b[0], b[1])
-                p2 = (b[0] + b[2], b[1] + b[3])
-                box_image = cv2.rectangle(img=box_image, pt1=p1, pt2=p2, color=color, thickness=2)
-            new_image += box_image
-
-        masks = target["masks"]
-        masks = masks.clamp(0, 1)
-        mask_arr = masks.cpu().numpy()
-        mask_image = np.zeros((646, 1096, 3))
-        if gt:
-            for m in mask_arr:
-                m = np.array(m).reshape(646, 1096, 1)
-                m = np.dstack((m, m, m))
-                m[:, :] = m[:, :] * [255, 0, 0]
-                mask_image += m
-            new_image += mask_image
+            boxes_image_gt = get_boxes_array(boxes, shape)
         else:
-            index = 1
-            for m in mask_arr:
-                m = np.array(m).reshape(646, 1096, 1)
-                if index < 81:
-                    m = m * COLORS[index]/255
-                else:
-                    m = m * COLORS[index]/255
-                index += 1
-                mask_image += m
-            new_image += mask_image
-        cv2.imshow('image', new_image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+            boxes_image_gt = np.zeros(shape)
+
+        if "masks" in target:
+            masks = target["masks"]
+            mask_image_gt = get_mask_array(masks, True, shape)
+        else:
+            mask_image_gt = np.zeros(shape)
+
+    if result:
+        if "boxes" in result:
+            boxes = result["boxes"]
+            boxes_image_result = get_boxes_array(boxes, shape)
+        else:
+            boxes_image_result = np.zeros(shape)
+
+        if "masks" in result:
+            masks = result["masks"]
+            mask_image_result = get_mask_array(masks, False, shape)
+        else:
+            mask_image_result = np.zeros(shape)
+
+    return (new_image*255).astype("uint8"), boxes_image_gt, mask_image_gt, boxes_image_result, mask_image_result
+
+
+def get_boxes_array(boxes, shape):
+    color = (255, 0, 0)
+    box_image = np.zeros(shape)
+    boxes = xyxy2xywh(boxes).cpu().detach()
+    for i, b in enumerate(boxes):
+        b = b.tolist()
+        b = list(map(int, b))
+        p1 = (b[0], b[1])
+        p2 = (b[0] + b[2], b[1] + b[3])
+        box_image = cv2.rectangle(img=box_image, pt1=p1, pt2=p2, color=color, thickness=2)
+
+    return box_image.astype("uint8")
+
+
+def get_mask_array(masks, gt, shape):
+    masks = masks.clamp(0, 1)
+    mask_arr = masks.cpu().numpy()
+    mask_image = np.zeros(shape)
+
+    if gt:
+        for m in mask_arr:
+            m = np.array(m).reshape(shape[0], shape[1], 1)
+            m = cv2.cvtColor(m, cv2.COLOR_GRAY2RGB)
+            m = m * [255, 0, 0]
+            mask_image += m
+        return mask_image.astype("uint8")
+    else:
+        index = 1
+        for m in mask_arr:
+            m = np.array(m).reshape(shape[0], shape[1], 1)
+            if index < 81:
+                m = m * COLORS[index]
+            else:
+                m = m * COLORS[index - 80]
+            index += 1
+            mask_image += m
+        return mask_image.astype("uint8")
 
 
 def show_single_target(image, target, bouding):
@@ -179,60 +205,3 @@ def show_single_target(image, target, bouding):
 
     #plt.savefig('fig.png', bbox_inches='tight')
 
-'''
-def draw_img(image, target, classes):
-    image = image.clone()
-
-    class_ids, classes, boxes, masks = [aa.cpu().numpy() for aa in results]
-    num_detected = class_ids.shape[0]
-
-    if num_detected == 0:
-        return img_origin
-
-    img_fused = img_origin
-    if not cfg.hide_mask:
-        masks_semantic = masks * (class_ids[:, None, None] + 1)  # expand class_ids' shape for broadcasting
-        # The color of the overlap area is different because of the '%' operation.
-        masks_semantic = masks_semantic.astype('int').sum(axis=0) % (cfg.num_classes - 1)
-        color_masks = COLORS[masks_semantic].astype('uint8')
-        img_fused = cv2.addWeighted(color_masks, 0.4, img_origin, 0.6, gamma=0)
-
-        if cfg.cutout:
-            for i in range(num_detected):
-                one_obj = np.tile(masks[i], (3, 1, 1)).transpose((1, 2, 0))
-                one_obj = one_obj * img_origin
-                new_mask = masks[i] == 0
-                new_mask = np.tile(new_mask * 255, (3, 1, 1)).transpose((1, 2, 0))
-                x1, y1, x2, y2 = boxes[i, :]
-                img_matting = (one_obj + new_mask)[y1:y2, x1:x2, :]
-                cv2.imwrite(f'results/images/{img_name}_{i}.jpg', img_matting)
-
-    scale = 0.6
-    thickness = 1
-    font = cv2.FONT_HERSHEY_DUPLEX
-
-    if not cfg.hide_bbox:
-        for i in reversed(range(num_detected)):
-            x1, y1, x2, y2 = boxes[i, :]
-
-            color = COLORS[class_ids[i] + 1].tolist()
-            cv2.rectangle(img_fused, (x1, y1), (x2, y2), color, thickness)
-
-            class_name = cfg.class_names[class_ids[i]]
-            text_str = f'{class_name}: {classes[i]:.2f}' if not cfg.hide_score else class_name
-
-            text_w, text_h = cv2.getTextSize(text_str, font, scale, thickness)[0]
-            cv2.rectangle(img_fused, (x1, y1), (x1 + text_w, y1 + text_h + 5), color, -1)
-            cv2.putText(img_fused, text_str, (x1, y1 + 15), font, scale, (255, 255, 255), thickness, cv2.LINE_AA)
-
-    if cfg.real_time:
-        fps_str = f'fps: {fps:.2f}'
-        text_w, text_h = cv2.getTextSize(fps_str, font, scale, thickness)[0]
-        # Create a shadow to show the fps more clearly
-        img_fused = img_fused.astype(np.float32)
-        img_fused[0:text_h + 8, 0:text_w + 8] *= 0.6
-        img_fused = img_fused.astype(np.uint8)
-        cv2.putText(img_fused, fps_str, (0, text_h + 2), font, scale, (255, 255, 255), thickness, cv2.LINE_AA)
-
-    return img_fused
-'''

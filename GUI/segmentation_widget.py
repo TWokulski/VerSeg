@@ -1,8 +1,12 @@
+from PyQt5 import QtGui, Qt
 from PyQt5.QtGui import QIntValidator, QFont, QIcon, QPixmap
-from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QLineEdit, QComboBox, QTabWidget, QGridLayout,\
-    QGroupBox, QFileDialog, QTextEdit
+from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QLineEdit, QComboBox, QTabWidget, QGridLayout, \
+    QGroupBox, QFileDialog, QTextEdit, QApplication
 import torch
 import Mask_RCNN as algorithm
+from PIL import Image, ImageQt
+from PyQt5.QtCore import Qt
+import cv2
 
 
 class SegmentationWidget(QWidget):
@@ -13,13 +17,15 @@ class SegmentationWidget(QWidget):
         self.back_to_menu_btn.setGeometry(20, 20, 100, 40)
 
         self.original_img_place = QLabel(self)
-        self.mask_img_place = QLabel(self)
+        self.pred_img_place = QLabel(self)
+        self.gt_img_place = QLabel(self)
 
         self.pictures_tabs = QTabWidget(self)
         self.pictures_tabs.setGeometry(40, 120, 600, 450)
 
         self.pictures_tabs.addTab(self.original_img_place, "Original image")
-        self.pictures_tabs.addTab(self.mask_img_place, "Predicted mask")
+        self.pictures_tabs.addTab(self.pred_img_place, "Predicted mask")
+        self.pictures_tabs.addTab(self.gt_img_place, "Target mask")
 
         self.eval_box = QGroupBox("Evaluation Metrics", self)
         gbox = QGridLayout()
@@ -63,6 +69,8 @@ class SegmentationWidget(QWidget):
         self.make_segm_btn = QPushButton("Segment", self)
         self.make_segm_btn.setGeometry(674, 530, 280, 40)
         self.make_segm_btn.setFont(QFont('Arial', 10))
+
+        self.make_segm_btn.clicked.connect(self.visualise)
 
         self.param_box = QGroupBox("Evaluation Metrics", self)
         gbox2 = QGridLayout()
@@ -112,43 +120,63 @@ class SegmentationWidget(QWidget):
         return int(self.num_class_value.toPlainText())
 
     def visualise(self):
+
+        org_im_list = []
+        gt_list = []
+        pred_list = []
+
         val_samples = 1
         data_dir = 'Dataset'
         num_classes = 2
-        model_path = 'ckpt/-2'
+        model_path = 'ckpt/bestbest-98.pth'
 
         device = torch.device('cpu')
 
         dataset = algorithm.COCODataset(data_dir, 'Validation', True)
-        self.classes = dataset.classes
+        classes = dataset.classes
         coco = dataset.coco
         iou_types = ['bbox', 'segm']
-        self.evaluator = algorithm.CocoEvaluator(coco, iou_types)
+        evaluator = algorithm.CocoEvaluator(coco, iou_types)
 
         indices = torch.randperm(len(dataset)).tolist()
         dataset = torch.utils.data.Subset(dataset, indices[:val_samples])
-        self.model = algorithm.resnet50_for_mask_rcnn(True, num_classes).to(device)
+        model = algorithm.resnet50_for_mask_rcnn(True, num_classes).to(device)
 
         user_model = torch.load(model_path, map_location=device)
-        self.model.load_state_dict(user_model['model'])
+        model.load_state_dict(user_model['model'])
         del user_model
-        self.model.eval()
-
-        gt_list = []
-        pred_list = []
-        org_im_list = []
+        model.eval()
 
         for (image, target) in dataset:
-            g, p = self.show_images(image, target)
-            gt_list.append(g)
-            pred_list.append(p)
-            org_im_list.append(image)
+            with torch.no_grad():
+                result = model(image)
+            result = {k: v.cpu() for k, v in result.items()}
+            res = {target['image_id'].item(): result}
+            evaluator.update(res)
+            original_img, gt_box, gt_mask, pred_box, pred_mask = algorithm.draw_image(image, target, result, classes)
+            gt_image = cv2.addWeighted(original_img, 0.7, gt_mask, 0.7, 0)
+            gt_image = cv2.addWeighted(gt_image, 0.7, gt_box, 1, 0)
+            pred_image = cv2.addWeighted(original_img, 0.7, pred_mask, 0.7, 0)
+            pred_image = cv2.addWeighted(pred_image, 0.7, pred_box, 1, 0)
 
-        im1 = QPixmap(org_im_list[0])
-        im2 = QPixmap(gt_list[0])
-        im3 = QPixmap(pred_list[0])
+            original_img = ImageQt.ImageQt(Image.fromarray(original_img.astype("uint8"), "RGB"))
+            gt_image = ImageQt.ImageQt(Image.fromarray(gt_image.astype("uint8"), "RGB"))
+            pred_image = ImageQt.ImageQt(Image.fromarray(pred_image.astype("uint8"), "RGB"))
+
+            org_im_list.append(original_img)
+            gt_list.append(gt_image)
+            pred_list.append(pred_image)
+
+        im1 = QPixmap.fromImage(org_im_list[0]).copy()
+        im2 = QPixmap.fromImage(pred_list[0]).copy()
+        im3 = QPixmap.fromImage(gt_list[0]).copy()
+        im1 = im1.scaledToWidth(self.pictures_tabs.width(), Qt.SmoothTransformation)
+        im2 = im2.scaledToWidth(self.pictures_tabs.width(), Qt.SmoothTransformation)
+        im3 = im3.scaledToWidth(self.pictures_tabs.width(), Qt.SmoothTransformation)
         self.original_img_place.setPixmap(im1)
-        self.mask_img_place.setPixmap(im3)
+        self.pred_img_place.setPixmap(im2)
+        self.gt_img_place.setPixmap(im3)
+        QApplication.processEvents()
 
     def show_images(self, image, target):
         with torch.no_grad():
