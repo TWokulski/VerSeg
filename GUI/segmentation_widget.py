@@ -21,15 +21,22 @@ class SegmentationWidget(QWidget):
         self.gt_img_place = QLabel(self)
 
         self.pictures_tabs = QTabWidget(self)
-        self.pictures_tabs.setGeometry(40, 120, 600, 450)
+        self.pictures_tabs.setGeometry(40, 120, 600, 400)
 
         self.pictures_tabs.addTab(self.original_img_place, "Original image")
         self.pictures_tabs.addTab(self.pred_img_place, "Predicted mask")
         self.pictures_tabs.addTab(self.gt_img_place, "Target mask")
 
+        self.title = QLabel("VerSeg", self)
+        self.title.setWordWrap(True)
+        self.title.setFont(QFont('Arial', 40))
+        self.title.setGeometry(200, 10, 400, 80)
+        self.title.setStyleSheet("font-style: italic;\n"
+                                 "font-weight: bold;")
+
         self.eval_box = QGroupBox("Evaluation Metrics", self)
         gbox = QGridLayout()
-        self.eval_box.setGeometry(674, 135, 280, 150)
+        self.eval_box.setGeometry(674, 135, 280, 120)
 
         self.ap_text_lbl = QLabel("AP for your image: ", self)
         self.ap_text_lbl.setWordWrap(True)
@@ -72,9 +79,9 @@ class SegmentationWidget(QWidget):
 
         self.make_segm_btn.clicked.connect(self.visualise)
 
-        self.param_box = QGroupBox("Evaluation Metrics", self)
+        self.param_box = QGroupBox("Dataset info", self)
         gbox2 = QGridLayout()
-        self.param_box.setGeometry(674, 300, 280, 150)
+        self.param_box.setGeometry(674, 300, 280, 180)
 
         self.data_dir_lbl = QLabel("Directory for your dataset: ", self)
         self.data_dir_lbl.setWordWrap(True)
