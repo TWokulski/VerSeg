@@ -14,9 +14,10 @@ class MainMenuWidget(QWidget):
         super(MainMenuWidget, self).__init__(parent)
         self.title = QLabel("VerSeg", self)
         self.title.setWordWrap(True)
-        self.title.setFont(QFont('Arial', 40))
-        self.title.setGeometry(40, 20, 400, 80)
-        self.title.setStyleSheet("color: black")
+        self.title.setFont(QFont('Arial', 60))
+        self.title.setGeometry(40, 20, 400, 120)
+        self.title.setStyleSheet("font-style: italic;\n"
+                                 "font-weight: bold;")
 
         self.segmentation_button = QPushButton("Find vertebra", self)
         self.segmentation_button.setGeometry(172, 360, 320, 60)

@@ -45,8 +45,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
 if __name__ == '__main__':
+    style = open("GUI/style.qss", "r").read()
 
     app = QApplication([])
     window = MainWindow()
+    window.setStyleSheet(style)
     window.show()
     sys.exit(app.exec_())

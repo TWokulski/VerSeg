@@ -18,7 +18,7 @@ class BalancedPositiveNegativeSampler:
         random_positive = torch.randperm(positive.numel(), device=positive.device)[:positive_number]
         random_negative = torch.randperm(negative.numel(), device=negative.device)[:negative_number]
 
-        pos_idx = positive[random_positive]
-        neg_idx = negative[random_negative]
+        positive_idx = positive[random_positive]
+        negative_idx = negative[random_negative]
 
-        return pos_idx, neg_idx
+        return positive_idx, negative_idx
