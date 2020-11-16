@@ -50,9 +50,7 @@ def evaluate(model, data_loader, device, parameters):
 
     temp = sys.stdout
     sys.stdout = CocoConversion()
-
     coco_evaluator.summarize()
-
     output = sys.stdout
     sys.stdout = temp
 
