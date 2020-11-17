@@ -7,6 +7,7 @@ import Mask_RCNN as algorithm
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QFileDialog, QWidget, QPushButton, QLabel, QComboBox, QTextEdit, QGroupBox, QGridLayout
 import os
+from Config import Configuration
 
 
 class TrainingWidget(QWidget):
@@ -30,10 +31,10 @@ class TrainingWidget(QWidget):
         self.back_to_menu_btn = QPushButton("Back", self)
         self.start_training_btn = QPushButton("START TRAINING", self)
         self.validating_btn = QPushButton("Validate parameters", self)
-        self.validating_lbl = QLabel("Choose your parameters for training", self)
         self.data_params_box = QGroupBox("Your dataset", self)
 
         self.training_params_box = QGroupBox("Your training parameters", self)
+        self.warning_lbl = QLabel("", self)
 
         self.images_train_lbl = QLabel("Images in your training dataset: ", self)
         self.images_train_value_lbl = QLabel("82", self)
@@ -110,18 +111,19 @@ class TrainingWidget(QWidget):
         self.start_training_btn.setFont(QFont('Arial', 15))
         self.start_training_btn.setStyleSheet("font-weight: bold;")
         self.start_training_btn.clicked.connect(self.train)
+        self.start_training_btn.setDisabled(True)
 
         self.validating_btn.setGeometry(704, 400, 300, self.lbl_height + 10)
         self.validating_btn.setFont(QFont('Arial', 10))
         self.validating_btn.setStyleSheet("font-weight: bold;")
-
-        self.validating_lbl.setWordWrap(True)
-        self.validating_lbl.setFont(QFont('Arial', 20))
-        self.validating_lbl.setStyleSheet("color: red")
-        self.validating_lbl.setGeometry(275, 888, 624, self.lbl_height + 10)
+        self.validating_btn.clicked.connect(self.validate_params)
 
     def set_config_section(self):
         gbox = QGridLayout()
+
+        self.warning_lbl.setWordWrap(True)
+        self.warning_lbl.setFont(QFont('Arial', 10))
+        self.warning_lbl.setStyleSheet("color: red")
 
         self.device_lbl.setWordWrap(True)
         self.device_lbl.setFont(QFont('Arial', 10))
@@ -174,6 +176,7 @@ class TrainingWidget(QWidget):
         gbox.addWidget(self.dir_path_lbl, 5, 0, 1, 2)
         gbox.addWidget(self.brows_btn, 5, 3, 1, 1)
         gbox.addWidget(self.path_content, 5, 2, 1, 1)
+        gbox.addWidget(self.warning_lbl, 5, 5, 1, 1)
 
         self.training_params_box.setGeometry(self.starting_lbl_x, self.starting_lbl_y, 984, 300)
         self.training_params_box.setLayout(gbox)
@@ -183,31 +186,72 @@ class TrainingWidget(QWidget):
         self.path_content.setText(self.dir_path)
 
     def get_seed(self):
-        return int(self.seed_value.toPlainText())
+        try:
+            return int(self.seed_value.toPlainText())
+        except:
+            self.warning_lbl.setText("INCORECT PARAMETERS")
+            return -1
 
     def get_epoch(self):
-        return self.epoch_value
+        try:
+            return int(self.epoch_value.toPlainText())
+        except:
+            self.warning_lbl.setText("INCORECT PARAMETERS")
+            return -1
 
     def get_classes(self):
-        return self.class_value
+        try:
+            return int(self.class_value.toPlainText())
+        except:
+            self.warning_lbl.setText("INCORECT PARAMETERS")
+            return -1
 
     def get_iterations(self):
-        return self.iterations_value
+        try:
+            return int(self.iterations_value.toPlainText())
+        except:
+            self.warning_lbl.setText("INCORECT PARAMETERS")
+            return -1
 
     def get_momentum(self):
-        return self.momentum_value
+        try:
+            return float(self.momentum_value.toPlainText())
+        except:
+            self.warning_lbl.setText("INCORECT PARAMETERS")
+            return -1
 
     def get_decay(self):
-        return self.decay_value
+        try:
+            return float(self.decay_value.toPlainText())
+        except:
+            self.warning_lbl.setText("INCORECT PARAMETERS")
+            return -1
 
     def get_learning_rate(self):
-        return self.learning_rate_value
+        try:
+            return float(self.learning_rate_value.toPlainText())
+        except:
+            self.warning_lbl.setText("INCORECT PARAMETERS")
+            return -1
 
     def get_learning_steps(self):
-        return self.learning_steps_value
+        try:
+            lr_steps = list(self.learning_steps_value.toPlainText().split(" "))
+            lr_steps = [int(x) for x in lr_steps]
+            return lr_steps
+        except:
+            self.warning_lbl.setText("INCORECT PARAMETERS")
+            return -1
 
     def get_device(self):
-        return self.device_value
+        return str(self.device_value.currentText())
+
+    def get_iterations_to_warmup(self):
+        try:
+            return int(self.warm_up_value.toPlainText())
+        except:
+            self.warning_lbl.setText("INCORECT PARAMETERS")
+            return -1
 
     def get_all_params(self):
         params = {
@@ -221,35 +265,29 @@ class TrainingWidget(QWidget):
             "learning_steps": self.get_learning_steps(),
             "device": self.get_device(),
             "dataset_dir": self.dir_path,
-            "publishing_losses_frequency": 100,
+            "publishing_losses_frequency": 20,
             "checkpoint_path": './ckpt',
             "learning_rate_lambda": 0.1,
             "model_path": './model',
-            "iterations_to_warmup": 800,
+            "iterations_to_warmup": self.get_iterations_to_warmup(),
             "result_path": 'ckpt/result'
         }
         return params
 
+    def validate_params(self):
+        params = self.get_all_params()
+        wrong_params = False
+        for p in params.values():
+            if p == -1:
+                wrong_params = True
+        if wrong_params:
+            self.start_training_btn.setDisabled(True)
+        else:
+            self.warning_lbl.setText("")
+            self.start_training_btn.setDisabled(False)
+            self.parameters = params
+
     def train(self):
-        # self.parameters = self.get_all_params()
-        self.parameters = {
-            "seed": 1,
-            "number_of_epochs": 2,
-            "number_of_classes": 2,
-            "number_of_iterations": 1,
-            "momentum": 0.9,
-            "decay": 0.0001,
-            "learning_rate": 0.01,
-            "learning_steps": [1, 5],
-            "device": 'cpu',
-            "dataset_dir": 'Dataset',
-            "publishing_losses_frequency": 100,
-            "checkpoint_path": 'ckpt/',
-            "learning_rate_lambda": 0.1,
-            "model_path": 'model/',
-            "iterations_to_warmup": 800,
-            "result_path": 'ckpt/result'
-        }
         device = torch.device(self.parameters['device'])
 
         train_set = algorithm.COCODataset(self.parameters['dataset_dir'], "Train", train=True)
