@@ -39,6 +39,7 @@ class CocoConversion:
 
     def get_AP(self):
         txt = str(self)
+        print(txt)
         values = re.findall(r"(\d{3})\n", txt)
         values = [int(v) / 10 for v in values]
         result = {"bbox AP": values[0], "mask AP": values[12]}
@@ -48,5 +49,14 @@ class CocoConversion:
         txt = str(self)
         values = re.findall(r"(\d{3})\n", txt)
         values = [int(v) / 10 for v in values]
-        result = {"bbox AR": values[8], "mask AR": values[19]}
+        result = {"bbox AR": values[8], "mask AR": values[20]}
+        return result
+
+    def get_AF1(self):
+        txt = str(self)
+        values = re.findall(r"(\d{3})\n", txt)
+        values = [int(v) / 10 for v in values]
+        dice_box = 2 * (values[0] * values[8]) / (values[0] + values[8])
+        dice_mask = 2 * (values[12] * values[19]) / (values[12] + values[20])
+        result = {"bbox F1Score": dice_box, "mask F1Score": dice_mask}
         return result

@@ -31,7 +31,7 @@ def main():
     }
 
     device = torch.device(parameters['device'])
-    best_model_by_maskAP = 0
+    best_model_by_maskF1 = 0
 
     train_set = algorithm.COCODataset(parameters['dataset_dir'], "Train", train=True)
     indices = torch.randperm(len(train_set)).tolist()
@@ -82,10 +82,12 @@ def main():
         trained_epoch = epoch + 1
         maskAP = eval_output.get_AP()
         maskAR = eval_output.get_AR()
+        maskF1 = eval_output.get_AF1()
         print('AP: ', maskAP)
         print('AR: ', maskAR)
-        if maskAP['mask AP'] > best_model_by_maskAP:
-            best_model_by_maskAP = maskAP['mask AP']
+        print('F1: ', maskF1)
+        if maskF1['mask F1Score'] > best_model_by_maskF1:
+            best_model_by_maskF1 = maskF1['mask F1Score']
             algorithm.save_best(model, optimizer, trained_epoch,
                                 parameters['model_path'], eval_info=str(eval_output))
 

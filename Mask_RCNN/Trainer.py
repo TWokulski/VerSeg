@@ -33,6 +33,7 @@ def train_epoch(model, optimizer, data_loader, device, epoch, parameters):
         if iterations_to_make_epoch % parameters["publishing_losses_frequency"] == 0:
             print("{}\t".format(iterations_to_make_epoch),
                   "\t".join("{:.3f}".format(loss.item()) for loss in losses.values()))
+            print("Total loss: {}".format(total_loss))
 
         if i >= iterations - 1:
             break
