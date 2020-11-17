@@ -39,7 +39,6 @@ class CocoConversion:
 
     def get_AP(self):
         txt = str(self)
-        print(txt)
         values = re.findall(r"(\d{3})\n", txt)
         values = [int(v) / 10 for v in values]
         result = {"bbox AP": values[0], "mask AP": values[12]}
