@@ -50,22 +50,22 @@ class SegmentationWidget(QWidget):
         self.ap_text_lbl = QLabel("AP for your dataset: ", self)
         self.ap_text_lbl.setWordWrap(True)
         self.ap_text_lbl.setFont(QFont('Arial', 10))
-        self.ap_text_lbl.setStyleSheet("color: black")
+        self.ap_text_lbl.setStyleSheet("color: Gray")
 
         self.ap_value_lbl = QLabel("82", self)
         self.ap_value_lbl.setWordWrap(True)
         self.ap_value_lbl.setFont(QFont('Arial', 10))
-        self.ap_value_lbl.setStyleSheet("color: black")
+        self.ap_value_lbl.setStyleSheet("color: Gray")
 
         self.iou_text_lbl = QLabel("AR for your dataset: ", self)
         self.iou_text_lbl.setWordWrap(True)
         self.iou_text_lbl.setFont(QFont('Arial', 10))
-        self.iou_text_lbl.setStyleSheet("color: black")
+        self.iou_text_lbl.setStyleSheet("color: Gray")
 
         self.iou_value_lbl = QLabel("9", self)
         self.iou_value_lbl.setWordWrap(True)
         self.iou_value_lbl.setFont(QFont('Arial', 10))
-        self.iou_value_lbl.setStyleSheet("color: black")
+        self.iou_value_lbl.setStyleSheet("color: Gray")
 
         gbox.addWidget(self.ap_text_lbl, 0, 0)
         gbox.addWidget(self.ap_value_lbl, 0, 1)
@@ -99,17 +99,17 @@ class SegmentationWidget(QWidget):
         self.data_dir_lbl = QLabel("Directory for your dataset: ", self)
         self.data_dir_lbl.setWordWrap(True)
         self.data_dir_lbl.setFont(QFont('Arial', 10))
-        self.data_dir_lbl.setStyleSheet("color: black")
+        self.data_dir_lbl.setStyleSheet("color: Gray")
 
         self.model_dir_lbl = QLabel("Directory for your model", self)
         self.model_dir_lbl.setWordWrap(True)
         self.model_dir_lbl.setFont(QFont('Arial', 10))
-        self.model_dir_lbl.setStyleSheet("color: black")
+        self.model_dir_lbl.setStyleSheet("color: Gray")
 
         self.val_samples_lbl = QLabel("Number of smaples: ", self)
         self.val_samples_lbl.setWordWrap(True)
         self.val_samples_lbl.setFont(QFont('Arial', 10))
-        self.val_samples_lbl.setStyleSheet("color: black")
+        self.val_samples_lbl.setStyleSheet("color: Gray")
 
         self.brows1_btn = QPushButton("Browse...", self)
         self.brows1_btn.clicked.connect(self.get_dir_path)
