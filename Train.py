@@ -22,11 +22,11 @@ def main():
         "learning_steps": cfg.learning_rate_steps,
         "device": cfg.device,
         "dataset_dir": cfg.dataset_dir,
-        "publishing_losses_frequency": 100,
+        "publishing_losses_frequency": cfg.publishing_losses_frequency,
         "checkpoint_path": cfg.ckpt_path,
         "learning_rate_lambda": cfg.learning_rate_lambda,
         "model_path": cfg.model_path,
-        "iterations_to_warmup": 800,
+        "iterations_to_warmup": cfg.iterations_to_warmup,
         "result_path": cfg.result_path
     }
 

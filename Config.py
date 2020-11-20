@@ -4,21 +4,21 @@ import numpy as np
 class Configuration:
     def __init__(self):
         self.device = 'cuda'
-        self.learning_rate = 0.00125
-        self.learning_rate_steps = [40, 70]
+        self.learning_rate = 0.001
+        self.learning_rate_steps = [300, 500]
         self.learning_rate_lambda = 0.1
-        self.momentum = 0.9
-        self.decay = 0.0002
-        self.number_of_epochs = 2
-        self.publishing_losses_frequency = 100
-        self.ckpt_path = 'ckpt/'
-        self.dataset_dir = 'Dataset/'
-        self.model_path = 'model/best'
+        self.momentum = 0.90
+        self.decay = 0.0005
+        self.number_of_epochs = 200
+        self.publishing_losses_frequency = 20
+        self.ckpt_path = 'VerSeg/ckpt/'
+        self.dataset_dir = 'VerSeg/Dataset/'
+        self.model_path = 'VerSeg/model/'
         self.seed = 1234
-        self.learning_epoch = 0.1
-        self.number_of_iterations = 10
+        self.number_of_iterations = 100
+        self.iterations_to_warmup = 1000
         self.number_of_classes = 2
-        self.result_path = 'ckpt/result.pth'
+        self.result_path = 'VerSeg/ckpt/result.pth'
 
 
 COLORS = np.array([[0, 0, 0], [244, 67, 54], [233, 30, 99], [156, 39, 176], [103, 58, 183], [100, 30, 60],
