@@ -56,13 +56,15 @@ class CocoConversion:
         values = re.findall(r"(\d{3})\n", txt)
         values = [int(v) / 10 for v in values]
         if (values[0] + values[8]) == 0.0:
-            dice_box = 0
+            dice_box = 0.0
         else:
             dice_box = 2 * (values[0] * values[8]) / (values[0] + values[8])
 
         if (values[12] + values[20]) == 0.0:
-            dice_mask = 0
+            dice_mask = 0.0
         else:
             dice_mask = 2 * (values[12] * values[19]) / (values[12] + values[20])
+        dice_box = format(dice_box, ".2f")
+        dice_mask = format(dice_mask, ".2f")
         result = {"bbox F1Score": dice_box, "mask F1Score": dice_mask}
         return result

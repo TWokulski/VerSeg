@@ -17,6 +17,8 @@ class SegmentationWidget(QWidget):
         self.org_im_list = []
         self.gt_list = []
         self.pred_list = []
+        self.ap_scores = []
+        self.f1_scores = []
         self.present_index = 0
 
         self.model_path = ''
@@ -45,32 +47,56 @@ class SegmentationWidget(QWidget):
 
         self.eval_box = QGroupBox("Evaluation Metrics", self)
         gbox = QGridLayout()
-        self.eval_box.setGeometry(674, 135, 280, 120)
+        self.eval_box.setGeometry(674, 135, 280, 160)
 
-        self.ap_text_lbl = QLabel("AP for your dataset: ", self)
-        self.ap_text_lbl.setWordWrap(True)
-        self.ap_text_lbl.setFont(QFont('Arial', 10))
-        self.ap_text_lbl.setStyleSheet("color: Gray")
+        self.ap_mask_text_lbl = QLabel("Mask AP: ", self)
+        self.ap_mask_text_lbl.setWordWrap(True)
+        self.ap_mask_text_lbl.setFont(QFont('Arial', 10))
+        self.ap_mask_text_lbl.setStyleSheet("color: Gray")
 
-        self.ap_value_lbl = QLabel("82", self)
-        self.ap_value_lbl.setWordWrap(True)
-        self.ap_value_lbl.setFont(QFont('Arial', 10))
-        self.ap_value_lbl.setStyleSheet("color: Gray")
+        self.ap_mask_value_lbl = QLabel("", self)
+        self.ap_mask_value_lbl.setWordWrap(True)
+        self.ap_mask_value_lbl.setFont(QFont('Arial', 10))
+        self.ap_mask_value_lbl.setStyleSheet("color: Gray")
 
-        self.iou_text_lbl = QLabel("AR for your dataset: ", self)
-        self.iou_text_lbl.setWordWrap(True)
-        self.iou_text_lbl.setFont(QFont('Arial', 10))
-        self.iou_text_lbl.setStyleSheet("color: Gray")
+        self.ap_box_text_lbl = QLabel("Box AP: ", self)
+        self.ap_box_text_lbl.setWordWrap(True)
+        self.ap_box_text_lbl.setFont(QFont('Arial', 10))
+        self.ap_box_text_lbl.setStyleSheet("color: Gray")
 
-        self.iou_value_lbl = QLabel("9", self)
-        self.iou_value_lbl.setWordWrap(True)
-        self.iou_value_lbl.setFont(QFont('Arial', 10))
-        self.iou_value_lbl.setStyleSheet("color: Gray")
+        self.ap_box_value_lbl = QLabel("", self)
+        self.ap_box_value_lbl.setWordWrap(True)
+        self.ap_box_value_lbl.setFont(QFont('Arial', 10))
+        self.ap_box_value_lbl.setStyleSheet("color: Gray")
 
-        gbox.addWidget(self.ap_text_lbl, 0, 0)
-        gbox.addWidget(self.ap_value_lbl, 0, 1)
-        gbox.addWidget(self.iou_text_lbl, 1, 0)
-        gbox.addWidget(self.iou_value_lbl, 1, 1)
+        self.f1_box_text_lbl = QLabel("Box F1 Score: ", self)
+        self.f1_box_text_lbl.setWordWrap(True)
+        self.f1_box_text_lbl.setFont(QFont('Arial', 10))
+        self.f1_box_text_lbl.setStyleSheet("color: Gray")
+
+        self.f1_box_value_lbl = QLabel("", self)
+        self.f1_box_value_lbl.setWordWrap(True)
+        self.f1_box_value_lbl.setFont(QFont('Arial', 10))
+        self.f1_box_value_lbl.setStyleSheet("color: Gray")
+
+        self.f1_mask_text_lbl = QLabel("Mask F1 Score: ", self)
+        self.f1_mask_text_lbl.setWordWrap(True)
+        self.f1_mask_text_lbl.setFont(QFont('Arial', 10))
+        self.f1_mask_text_lbl.setStyleSheet("color: Gray")
+
+        self.f1_mask_value_lbl = QLabel("", self)
+        self.f1_mask_value_lbl.setWordWrap(True)
+        self.f1_mask_value_lbl.setFont(QFont('Arial', 10))
+        self.f1_mask_value_lbl.setStyleSheet("color: Gray")
+
+        gbox.addWidget(self.ap_mask_text_lbl, 0, 0)
+        gbox.addWidget(self.ap_mask_value_lbl, 0, 1)
+        gbox.addWidget(self.ap_box_text_lbl, 1, 0)
+        gbox.addWidget(self.ap_box_value_lbl, 1, 1)
+        gbox.addWidget(self.f1_mask_text_lbl, 2, 0)
+        gbox.addWidget(self.f1_mask_value_lbl, 2, 1)
+        gbox.addWidget(self.f1_box_text_lbl, 3, 0)
+        gbox.addWidget(self.f1_box_value_lbl, 3, 1)
 
         self.eval_box.setLayout(gbox)
 
@@ -94,7 +120,7 @@ class SegmentationWidget(QWidget):
 
         self.param_box = QGroupBox("Dataset info", self)
         gbox2 = QGridLayout()
-        self.param_box.setGeometry(674, 300, 280, 180)
+        self.param_box.setGeometry(674, 300, 280, 140)
 
         self.data_dir_lbl = QLabel("Directory for your dataset: ", self)
         self.data_dir_lbl.setWordWrap(True)
@@ -166,7 +192,7 @@ class SegmentationWidget(QWidget):
         try:
             val_samples = 2
             data_dir = 'Dataset'
-            model_path = 'ckpt/bestbest-98.pth'
+            model_path = 'ckpt/-2'
 
             device = torch.device('cpu')
 
@@ -196,7 +222,8 @@ class SegmentationWidget(QWidget):
                 evaluator.update(res)
                 coco_results.extend(algorithm.prepare_for_coco(res, ann_labels))
                 output = evaluate(evaluator, coco_results)
-                print(output)
+                self.ap_scores.append(output.get_AP())
+                self.f1_scores.append(output.get_AF1())
 
                 original_img, gt_box, gt_mask, pred_box, pred_mask = algorithm.draw_image(image, target, result, classes)
                 gt_image = cv2.addWeighted(original_img, 0.7, gt_mask, 0.7, 0)
@@ -226,6 +253,14 @@ class SegmentationWidget(QWidget):
         self.original_img_place.setPixmap(im1)
         self.pred_img_place.setPixmap(im2)
         self.gt_img_place.setPixmap(im3)
+
+        ap = self.ap_scores[index]
+        f1 = self.f1_scores[index]
+
+        self.ap_box_value_lbl.setText('{}'.format(ap["bbox AP"]))
+        self.ap_mask_value_lbl.setText('{}'.format(ap["mask AP"]))
+        self.f1_box_value_lbl.setText('{}'.format(f1['mask F1Score']))
+        self.f1_mask_value_lbl.setText('{}'.format(f1['bbox F1Score']))
         QApplication.processEvents()
 
     def show_images(self, image, target):

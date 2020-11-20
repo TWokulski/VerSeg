@@ -5,7 +5,8 @@ import time
 import torch
 import Mask_RCNN as algorithm
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QFileDialog, QWidget, QPushButton, QLabel, QComboBox, QTextEdit, QGroupBox, QGridLayout
+from PyQt5.QtWidgets import QFileDialog, QWidget, QPushButton, QLabel, QComboBox, QTextEdit, QGroupBox, QGridLayout, QApplication
+
 import os
 from Config import Configuration
 
@@ -14,7 +15,7 @@ class TrainingWidget(QWidget):
     def __init__(self, parent=None):
         super(TrainingWidget, self).__init__(parent)
 
-        self.best_model_by_maskAP = 0
+        self.best_model_by_maskF1 = 0
         self.parameters = {}
 
         self.starting_lbl_y = 80
@@ -37,9 +38,9 @@ class TrainingWidget(QWidget):
         self.warning_lbl = QLabel("", self)
 
         self.images_train_lbl = QLabel("Images in your training dataset: ", self)
-        self.images_train_value_lbl = QLabel("82", self)
+        self.images_train_value_lbl = QLabel("", self)
         self.images_val_lbl = QLabel("Images in your validation dataset: ", self)
-        self.images_val_value_lbl = QLabel("9", self)
+        self.images_val_value_lbl = QLabel("", self)
         self.device_lbl = QLabel("Your device: ", self)
         self.learning_rate_lbl = QLabel("Learning rate: ", self)
         self.learning_steps_lbl = QLabel("Learning steps: ", self)
@@ -266,9 +267,9 @@ class TrainingWidget(QWidget):
             "device": self.get_device(),
             "dataset_dir": self.dir_path,
             "publishing_losses_frequency": 20,
-            "checkpoint_path": './ckpt',
+            "checkpoint_path": 'ckpt/',
             "learning_rate_lambda": 0.1,
-            "model_path": './model',
+            "model_path": 'model/',
             "iterations_to_warmup": self.get_iterations_to_warmup(),
             "result_path": 'ckpt/result'
         }
@@ -290,12 +291,20 @@ class TrainingWidget(QWidget):
     def train(self):
         device = torch.device(self.parameters['device'])
 
-        train_set = algorithm.COCODataset(self.parameters['dataset_dir'], "Train", train=True)
-        indices = torch.randperm(len(train_set)).tolist()
-        train_set = torch.utils.data.Subset(train_set, indices)
+        try:
+            train_set = algorithm.COCODataset(self.parameters['dataset_dir'], "Train", train=True)
+            indices = torch.randperm(len(train_set)).tolist()
+            train_set = torch.utils.data.Subset(train_set, indices)
 
-        val_set = algorithm.COCODataset(self.parameters['dataset_dir'], "Validation", train=True)
-        model = algorithm.resnet50_for_mask_rcnn(True, self.parameters['number_of_classes']).to(device)
+            val_set = algorithm.COCODataset(self.parameters['dataset_dir'], "Validation", train=True)
+            self.images_train_value_lbl.setText('{}'.format(len(train_set)))
+            self.images_val_value_lbl.setText('{}'.format(len(val_set)))
+            QApplication.processEvents()
+
+            model = algorithm.resnet50_for_mask_rcnn(True, self.parameters['number_of_classes']).to(device)
+        except Exception as e:
+            print(e)
+            return
 
         params = [p for p in model.parameters() if p.requires_grad]
         optimizer = torch.optim.SGD(
@@ -327,19 +336,23 @@ class TrainingWidget(QWidget):
             training_epoch_time = time.time()
             self.parameters['learning_epoch'] = decrease(epoch) * self.parameters['learning_rate']
 
-            algorithm.train_epoch(model, optimizer, train_set, device, epoch, self.parameters)
-            training_epoch_time = time.time() - training_epoch_time
+            try:
+                algorithm.train_epoch(model, optimizer, train_set, device, epoch, self.parameters)
+                training_epoch_time = time.time() - training_epoch_time
 
-            validation_epoch_time = time.time()
-            eval_output = algorithm.evaluate(model, val_set, device, self.parameters)
-            # print(eval_output)
-            validation_epoch_time = time.time() - validation_epoch_time
+                validation_epoch_time = time.time()
+                eval_output = algorithm.evaluate(model, val_set, device, self.parameters)
+                validation_epoch_time = time.time() - validation_epoch_time
+            except Exception as e:
+                print(e)
+                return
 
             trained_epoch = epoch + 1
             maskAP = eval_output.get_AP()
-            print(maskAP)
-            if maskAP['mask AP'] > self.best_model_by_maskAP:
-                self.best_model_by_maskAP = maskAP['mask AP']
+            maskAR = eval_output.get_AR()
+            maskF1 = eval_output.get_AF1()
+            if maskF1['mask F1Score'] > self.best_model_by_maskF1:
+                self.best_model_by_maskF1 = maskF1['mask F1Score']
                 algorithm.save_best(model, optimizer, trained_epoch,
                                     self.parameters['model_path'], eval_info=str(eval_output))
 

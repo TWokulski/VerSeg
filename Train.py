@@ -36,7 +36,6 @@ def main():
     train_set = algorithm.COCODataset(parameters['dataset_dir'], "Train", train=True)
     indices = torch.randperm(len(train_set)).tolist()
     train_set = torch.utils.data.Subset(train_set, indices)
-
     val_set = algorithm.COCODataset(parameters['dataset_dir'], "Validation", train=True)
     model = algorithm.resnet50_for_mask_rcnn(True, parameters['number_of_classes']).to(device)
 
