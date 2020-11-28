@@ -190,13 +190,13 @@ class SegmentationWidget(QWidget):
         self.pred_list = []
 
         try:
-            val_samples = 2
+            val_samples = 20
             data_dir = 'Dataset'
-            model_path = 'ckpt/-2'
+            model_path = 'model/best-274.pth'
 
             device = torch.device('cpu')
 
-            dataset = algorithm.COCODataset(data_dir, 'Validation', True)
+            dataset = algorithm.COCODataset(data_dir, 'Train', True)
             classes = dataset.classes
             coco = dataset.coco
             iou_types = ['bbox', 'segm']
@@ -259,8 +259,8 @@ class SegmentationWidget(QWidget):
 
         self.ap_box_value_lbl.setText('{}'.format(ap["bbox AP"]))
         self.ap_mask_value_lbl.setText('{}'.format(ap["mask AP"]))
-        self.f1_box_value_lbl.setText('{}'.format(f1['mask F1Score']))
-        self.f1_mask_value_lbl.setText('{}'.format(f1['bbox F1Score']))
+        self.f1_box_value_lbl.setText('{}'.format(f1['bbox F1Score']))
+        self.f1_mask_value_lbl.setText('{}'.format(f1['mask F1Score']))
         QApplication.processEvents()
 
     def show_images(self, image, target):
