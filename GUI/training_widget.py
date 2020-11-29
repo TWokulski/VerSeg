@@ -9,6 +9,8 @@ from Config import Configuration
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QFileDialog, QWidget, QPushButton, QLabel, QComboBox, QTextEdit, QGroupBox, QGridLayout, \
     QApplication, QProgressBar
+from .ThreadClass import *
+from PyQt5.QtCore import QThreadPool
 
 
 class TrainingWidget(QWidget):
@@ -18,6 +20,8 @@ class TrainingWidget(QWidget):
         self.best_model_by_maskF1 = 0
         self.parameters = {}
 
+        self.threadpool = QThreadPool()
+
         self.starting_lbl_y = 80
         self.starting_lbl_x = 20
         self.lbl_width = 300
@@ -25,6 +29,7 @@ class TrainingWidget(QWidget):
         self.starting_input_x = 300
         self.input_width = 100
         self.dir_path = '/'
+        self.present_epoch = 0
 
         self.title = QLabel("VerSeg", self)
         self.back_to_menu_btn = QPushButton("Back", self)
@@ -112,7 +117,7 @@ class TrainingWidget(QWidget):
         self.total_training_time_value.setGeometry(self.starting_lbl_x + 300, 400, 300, 40)
         self.total_training_time_lbl.setFont(QFont('Arial', 12))
         self.total_training_time_value.setFont(QFont('Arial', 12))
-        self.epoch_progress.setValue(50)
+        self.epoch_progress.setValue(0)
 
         self.set_time_section()
         self.set_best_model_section()
@@ -225,7 +230,7 @@ class TrainingWidget(QWidget):
         self.start_training_btn.setGeometry(300, 650, 424, self.lbl_height + 20)
         self.start_training_btn.setFont(QFont('Arial', 15))
         self.start_training_btn.setStyleSheet("font-weight: bold;")
-        self.start_training_btn.clicked.connect(self.train)
+        self.start_training_btn.clicked.connect(self.process_training)
 
         self.validating_btn.setGeometry(704, 400, 300, self.lbl_height + 10)
         self.validating_btn.setFont(QFont('Arial', 10))
@@ -403,6 +408,25 @@ class TrainingWidget(QWidget):
             self.warning_lbl.setText("INCORECT PARAMETERS")
             return -1
 
+    def update_progress_bar(self):
+        value = self.present_epoch / self.parameters['number_of_epochs']
+        value = int(value * 100)
+        self.epoch_progress.setValue(value)
+
+    def print_output(self, s):
+        print(s)
+
+    def training_complete(self):
+        print("TRAINING COMPLETE!")
+
+    def process_training(self):
+        self.change_stage(True)
+        worker = Worker(self.train)
+        worker.signals.result.connect(self.print_output)
+        worker.signals.finished.connect(self.training_complete)
+
+        self.threadpool.start(worker)
+
     def get_all_params(self):
         params = {
             "seed": self.get_seed(),
@@ -438,8 +462,8 @@ class TrainingWidget(QWidget):
             self.parameters = params
 
     def train(self):
-        self.change_stage(True)
         device = torch.device(self.parameters['device'])
+
         if str(self.start_fresh_box.currentText()) == "Start fresh":
             prefix, ext = os.path.splitext(self.parameters['checkpoint_path'])
             files = glob.glob(prefix + "-*" + ext)
@@ -484,10 +508,10 @@ class TrainingWidget(QWidget):
             torch.cuda.empty_cache()
 
         since = time.time()
-        print("\nalready trained: {} epochs; to {} epochs".format(starting_epoch, self.parameters['number_of_epochs']))
 
         for epoch in range(starting_epoch, self.parameters['number_of_epochs']):
-            print("\nepoch: {}".format(epoch + 1))
+            self.present_epoch = epoch
+            self.update_progress_bar()
 
             training_epoch_time = time.time()
             self.parameters['learning_epoch'] = decrease(epoch) * self.parameters['learning_rate']
@@ -546,6 +570,11 @@ class TrainingWidget(QWidget):
                 for i in range(len(checkpoints) - n):
                     os.remove("{}".format(checkpoints[i]))
 
+        self.present_epoch = self.present_epoch + 1
+        self.update_progress_bar()
+
         total_training_time = time.time() - since
         self.total_training_time_value.setText('{} s'.format(format(total_training_time, ".2f")))
         QApplication.processEvents()
+        return "Done."
+
