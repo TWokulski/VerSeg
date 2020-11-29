@@ -77,16 +77,6 @@ class MaskRCNN(nn.Module):
             return result
 
 
-from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
-
-
-def resnet50fpn_for_mask_rcnn(use_pre_trained, number_of_classes):
-    backbone = resnet_fpn_backbone('resnet50', pretrained=False)
-    model = MaskRCNN(backbone, number_of_classes)
-
-    return model
-
-
 def resnet50_for_mask_rcnn(use_pre_trained, number_of_classes):
     backbone = ResBackbone('resnet50')
     model = MaskRCNN(backbone, number_of_classes)

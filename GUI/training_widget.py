@@ -1,14 +1,14 @@
+import os
 import bisect
 import glob
 import re
 import time
 import torch
 import Mask_RCNN as algorithm
-from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QFileDialog, QWidget, QPushButton, QLabel, QComboBox, QTextEdit, QGroupBox, QGridLayout, QApplication
-
-import os
 from Config import Configuration
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QFileDialog, QWidget, QPushButton, QLabel, QComboBox, QTextEdit, QGroupBox, QGridLayout, \
+    QApplication, QProgressBar
 
 
 class TrainingWidget(QWidget):
@@ -24,19 +24,22 @@ class TrainingWidget(QWidget):
         self.lbl_height = 30
         self.starting_input_x = 300
         self.input_width = 100
-
         self.dir_path = '/'
 
         self.title = QLabel("VerSeg", self)
-
         self.back_to_menu_btn = QPushButton("Back", self)
+
         self.start_training_btn = QPushButton("START TRAINING", self)
         self.validating_btn = QPushButton("Validate parameters", self)
-        self.data_params_box = QGroupBox("Your dataset", self)
+
+        self.use_default_params_btn = QPushButton("Use default parameters", self)
+        self.clear_btn = QPushButton("Clear configuration", self)
+        self.start_fresh_box = QComboBox(self)
 
         self.training_params_box = QGroupBox("Your training parameters", self)
         self.warning_lbl = QLabel("", self)
 
+        self.data_params_box = QGroupBox("Your dataset", self)
         self.images_train_lbl = QLabel("Images in your training dataset: ", self)
         self.images_train_value_lbl = QLabel("", self)
         self.images_val_lbl = QLabel("Images in your validation dataset: ", self)
@@ -65,22 +68,133 @@ class TrainingWidget(QWidget):
         self.seed_value = QTextEdit(self)
         self.warm_up_value = QTextEdit(self)
 
+        self.epoch_progress = QProgressBar(self)
+
+        self.time_box = QGroupBox("Time of your training", self)
+        self.epoch_time_lbl = QLabel("Time of your last epoch: ", self)
+        self.epoch_time_value = QLabel("0.00 s", self)
+        self.val_time_lbl = QLabel("Time of your last evaluation: ", self)
+        self.val_time_value = QLabel("0.00 s", self)
+
+        self.best_model_box = QGroupBox("Your best model so far", self)
+        self.after_epoch_lbl = QLabel("Score form epoch: ", self)
+        self.after_epoch_value = QLabel("0", self)
+        self.f1_box_lbl = QLabel("Box F1 score: ", self)
+        self.f1_box_value = QLabel("0.00", self)
+        self.f1_mask_lbl = QLabel("Mask F1 score: ", self)
+        self.f1_mask_value = QLabel("0.00", self)
+
+        self.total_training_time_lbl = QLabel("Your total training time: ", self)
+        self.total_training_time_value = QLabel("...", self)
+
         self.set_gui()
+        self.set_second_stage()
+
+    def change_stage(self, stage=True):
+
+        self.epoch_progress.setVisible(stage)
+        self.total_training_time_lbl.setVisible(stage)
+        self.total_training_time_value.setVisible(stage)
+        self.time_box.setVisible(stage)
+        self.best_model_box.setVisible(stage)
+        self.data_params_box.setVisible(stage)
+
+        self.start_training_btn.setDisabled(stage)
+        self.validating_btn.setVisible(not stage)
+        self.training_params_box.setVisible(not stage)
+        self.start_fresh_box.setVisible(not stage)
+        self.use_default_params_btn.setVisible(not stage)
+        self.clear_btn.setVisible(not stage)
+
+    def set_second_stage(self):
+        self.epoch_progress.setGeometry(self.starting_lbl_x + 150, self.starting_lbl_y + 50, 684, 50)
+        self.total_training_time_lbl.setGeometry(self.starting_lbl_x + 40, 400, 260, 40)
+        self.total_training_time_value.setGeometry(self.starting_lbl_x + 300, 400, 300, 40)
+        self.total_training_time_lbl.setFont(QFont('Arial', 12))
+        self.total_training_time_value.setFont(QFont('Arial', 12))
+        self.epoch_progress.setValue(50)
+
+        self.set_time_section()
+        self.set_best_model_section()
+        self.set_dataset_section()
 
     def set_gui(self):
         self.set_config_section()
         self.set_header_section()
-        self.set_params_section()
+        self.set_additional_settings()
 
         self.title.setWordWrap(True)
         self.title.setFont(QFont('Arial', 40))
         self.title.setGeometry(200, 10, 400, 80)
         self.title.setStyleSheet("font-style: italic;\n"
                                  "font-weight: bold;")
+        self.change_stage(False)
+        self.start_training_btn.setDisabled(True)
 
-    def set_params_section(self):
+    def set_time_section(self):
         gbox = QGridLayout()
-        self.data_params_box.setGeometry(self.starting_lbl_x, 390, 260, 130)
+        self.time_box.setGeometry(self.starting_lbl_x + 362, 210, 260, 130)
+
+        self.epoch_time_lbl.setWordWrap(True)
+        self.epoch_time_lbl.setFont(QFont('Arial', 10))
+        self.epoch_time_lbl.setStyleSheet("color: Gray")
+
+        self.epoch_time_value.setWordWrap(True)
+        self.epoch_time_value.setFont(QFont('Arial', 10))
+        self.epoch_time_value.setStyleSheet("color: Gray")
+
+        self.val_time_lbl.setWordWrap(True)
+        self.val_time_lbl.setFont(QFont('Arial', 10))
+        self.val_time_lbl.setStyleSheet("color: Gray")
+
+        self.val_time_value.setWordWrap(True)
+        self.val_time_value.setFont(QFont('Arial', 10))
+        self.val_time_value.setStyleSheet("color: Gray")
+
+        gbox.addWidget(self.epoch_time_lbl, 0, 0)
+        gbox.addWidget(self.epoch_time_value, 0, 1)
+        gbox.addWidget(self.val_time_lbl, 1, 0)
+        gbox.addWidget(self.val_time_value, 1, 1)
+        self.time_box.setLayout(gbox)
+
+    def set_best_model_section(self):
+        gbox = QGridLayout()
+        self.best_model_box.setGeometry(self.starting_lbl_x + 40, 210, 260, 130)
+        self.after_epoch_lbl.setWordWrap(True)
+        self.after_epoch_lbl.setFont(QFont('Arial', 10))
+        self.after_epoch_lbl.setStyleSheet("color: Gray")
+
+        self.after_epoch_value.setWordWrap(True)
+        self.after_epoch_value.setFont(QFont('Arial', 10))
+        self.after_epoch_value.setStyleSheet("color: Gray")
+
+        self.f1_box_lbl.setWordWrap(True)
+        self.f1_box_lbl.setFont(QFont('Arial', 10))
+        self.f1_box_lbl.setStyleSheet("color: Gray")
+
+        self.f1_box_value.setWordWrap(True)
+        self.f1_box_value.setFont(QFont('Arial', 10))
+        self.f1_box_value.setStyleSheet("color: Gray")
+
+        self.f1_mask_lbl.setWordWrap(True)
+        self.f1_mask_lbl.setFont(QFont('Arial', 10))
+        self.f1_mask_lbl.setStyleSheet("color: Gray")
+
+        self.f1_mask_value.setWordWrap(True)
+        self.f1_mask_value.setFont(QFont('Arial', 10))
+        self.f1_mask_value.setStyleSheet("color: Gray")
+
+        gbox.addWidget(self.after_epoch_lbl, 0, 0)
+        gbox.addWidget(self.after_epoch_value, 0, 1)
+        gbox.addWidget(self.f1_box_lbl, 1, 0)
+        gbox.addWidget(self.f1_box_value, 1, 1)
+        gbox.addWidget(self.f1_mask_lbl, 2, 0)
+        gbox.addWidget(self.f1_mask_value, 2, 1)
+        self.best_model_box.setLayout(gbox)
+
+    def set_dataset_section(self):
+        gbox = QGridLayout()
+        self.data_params_box.setGeometry(self.starting_lbl_x + 362*2 - 40, 210, 260, 130)
 
         self.images_train_lbl.setWordWrap(True)
         self.images_train_lbl.setFont(QFont('Arial', 10))
@@ -112,12 +226,20 @@ class TrainingWidget(QWidget):
         self.start_training_btn.setFont(QFont('Arial', 15))
         self.start_training_btn.setStyleSheet("font-weight: bold;")
         self.start_training_btn.clicked.connect(self.train)
-        self.start_training_btn.setDisabled(True)
 
         self.validating_btn.setGeometry(704, 400, 300, self.lbl_height + 10)
         self.validating_btn.setFont(QFont('Arial', 10))
         self.validating_btn.setStyleSheet("font-weight: bold;")
         self.validating_btn.clicked.connect(self.validate_params)
+
+    def set_additional_settings(self):
+        self.start_fresh_box.addItems(["Start fresh", "Continue training"])
+        self.start_fresh_box.setGeometry(self.starting_lbl_x, 400, 160, self.lbl_height + 10)
+
+        self.clear_btn.setGeometry(self.starting_lbl_x + 180, 400, 160, self.lbl_height + 10)
+        self.clear_btn.clicked.connect(self.clear_params)
+        self.use_default_params_btn.setGeometry(self.starting_lbl_x + 360, 400, 160, self.lbl_height + 10)
+        self.use_default_params_btn.clicked.connect(self.set_default_params)
 
     def set_config_section(self):
         gbox = QGridLayout()
@@ -149,8 +271,9 @@ class TrainingWidget(QWidget):
         self.warm_up_lbl.setWordWrap(True)
         self.warm_up_lbl.setFont(QFont('Arial', 10))
 
-        self.device_value.addItems(["cuda", "cpu"])
+        self.device_value.addItems(["cpu", "cuda"])
         self.brows_btn.clicked.connect(self.get_path)
+        self.path_content.setDisabled(True)
 
         gbox.addWidget(self.device_lbl, 0, 0, 1, 2)
         gbox.addWidget(self.device_value, 0, 2, 1, 1)
@@ -181,6 +304,32 @@ class TrainingWidget(QWidget):
 
         self.training_params_box.setGeometry(self.starting_lbl_x, self.starting_lbl_y, 984, 300)
         self.training_params_box.setLayout(gbox)
+
+    def set_default_params(self):
+        cfg = Configuration()
+        self.learning_rate_value.setText(str(cfg.learning_rate))
+        self.learning_steps_value.setText("200 400")
+        self.decay_value.setText(str(cfg.decay))
+        self.momentum_value.setText(str(cfg.momentum))
+        self.epoch_value.setText(str(cfg.number_of_epochs))
+        self.iterations_value.setText(str(cfg.number_of_iterations))
+        self.path_content.setText('Dataset')
+        self.dir_path = 'Dataset'
+        self.class_value.setText(str(cfg.number_of_classes))
+        self.seed_value.setText(str(cfg.seed))
+        self.warm_up_value.setText(str(cfg.iterations_to_warmup))
+
+    def clear_params(self):
+        self.learning_rate_value.setText("")
+        self.learning_steps_value.setText("")
+        self.decay_value.setText("")
+        self.momentum_value.setText("")
+        self.epoch_value.setText("")
+        self.iterations_value.setText("")
+        self.path_content.setText("")
+        self.class_value.setText("")
+        self.seed_value.setText("")
+        self.warm_up_value.setText("")
 
     def get_path(self):
         self.dir_path = QFileDialog.getExistingDirectory(self, "Choose Directory", "C:\\")
@@ -289,7 +438,13 @@ class TrainingWidget(QWidget):
             self.parameters = params
 
     def train(self):
+        self.change_stage(True)
         device = torch.device(self.parameters['device'])
+        if str(self.start_fresh_box.currentText()) == "Start fresh":
+            prefix, ext = os.path.splitext(self.parameters['checkpoint_path'])
+            files = glob.glob(prefix + "-*" + ext)
+            for i in range(len(files)):
+                os.remove("{}".format(files[i]))
 
         try:
             train_set = algorithm.COCODataset(self.parameters['dataset_dir'], "Train", train=True)
@@ -304,6 +459,7 @@ class TrainingWidget(QWidget):
             model = algorithm.resnet50_for_mask_rcnn(True, self.parameters['number_of_classes']).to(device)
         except Exception as e:
             print(e)
+            self.change_stage(False)
             return
 
         params = [p for p in model.parameters() if p.requires_grad]
@@ -339,22 +495,45 @@ class TrainingWidget(QWidget):
             try:
                 algorithm.train_epoch(model, optimizer, train_set, device, epoch, self.parameters)
                 training_epoch_time = time.time() - training_epoch_time
+                if training_epoch_time > 60:
+                    training_epoch_time_str = training_epoch_time/60
+                    training_epoch_time_str = format(training_epoch_time_str, ".2f")
+                    training_epoch_time_str += ' min'
+                else:
+                    training_epoch_time_str = format(training_epoch_time, ".2f")
+                    training_epoch_time_str += ' s'
+
+                self.epoch_time_value.setText(training_epoch_time_str)
 
                 validation_epoch_time = time.time()
                 eval_output = algorithm.evaluate(model, val_set, device, self.parameters)
                 validation_epoch_time = time.time() - validation_epoch_time
+
+                if validation_epoch_time > 60:
+                    validation_epoch_time_str = validation_epoch_time/60
+                    validation_epoch_time_str = format(validation_epoch_time_str, ".2f")
+                    validation_epoch_time_str += ' min'
+                else:
+                    validation_epoch_time_str = format(validation_epoch_time, ".2f")
+                    validation_epoch_time_str += ' s'
+
+                self.val_time_value.setText(validation_epoch_time_str)
+                QApplication.processEvents()
             except Exception as e:
                 print(e)
+                self.change_stage(False)
                 return
 
             trained_epoch = epoch + 1
-            maskAP = eval_output.get_AP()
-            maskAR = eval_output.get_AR()
             maskF1 = eval_output.get_AF1()
             if maskF1['mask F1Score'] > self.best_model_by_maskF1:
                 self.best_model_by_maskF1 = maskF1['mask F1Score']
                 algorithm.save_best(model, optimizer, trained_epoch,
                                     self.parameters['model_path'], eval_info=str(eval_output))
+                self.f1_box_value.setText('{}'.format(maskF1['bbox F1Score']))
+                self.f1_mask_value.setText('{}'.format(maskF1['mask F1Score']))
+                self.after_epoch_value.setText('{}'.format(epoch + 1))
+                QApplication.processEvents()
 
             algorithm.save_checkpoint(model, optimizer, trained_epoch,
                                       self.parameters['checkpoint_path'], eval_info=str(eval_output))
@@ -368,3 +547,5 @@ class TrainingWidget(QWidget):
                     os.remove("{}".format(checkpoints[i]))
 
         total_training_time = time.time() - since
+        self.total_training_time_value.setText('{} s'.format(format(total_training_time, ".2f")))
+        QApplication.processEvents()

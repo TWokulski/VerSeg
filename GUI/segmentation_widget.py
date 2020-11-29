@@ -120,7 +120,7 @@ class SegmentationWidget(QWidget):
 
         self.param_box = QGroupBox("Dataset info", self)
         gbox2 = QGridLayout()
-        self.param_box.setGeometry(674, 300, 280, 140)
+        self.param_box.setGeometry(674, 300, 280, 180)
 
         self.data_dir_lbl = QLabel("Directory for your dataset: ", self)
         self.data_dir_lbl.setWordWrap(True)

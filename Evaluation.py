@@ -16,8 +16,8 @@ coco = dataset.coco
 iou_types = ['bbox', 'segm']
 evaluator = algorithm.CocoEvaluator(coco, iou_types)
 
-indices = torch.randperm(len(dataset)).tolist()
-dataset = torch.utils.data.Subset(dataset, indices[:val_samples])
+your_dataset_indices = torch.randperm(len(dataset)).tolist()
+dataset = torch.utils.data.Subset(dataset, your_dataset_indices[:val_samples])
 model = algorithm.resnet50_for_mask_rcnn(True, num_classes).to(device)
 
 user_model = torch.load(model_path, map_location=device)
