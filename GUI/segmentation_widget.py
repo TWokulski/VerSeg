@@ -47,7 +47,7 @@ class SegmentationWidget(QWidget):
 
         self.eval_box = QGroupBox("Evaluation Metrics", self)
         gbox = QGridLayout()
-        self.eval_box.setGeometry(674, 135, 280, 160)
+        self.eval_box.setGeometry(674, 135, 250, 160)
 
         self.ap_mask_text_lbl = QLabel("Mask AP: ", self)
         self.ap_mask_text_lbl.setWordWrap(True)
@@ -112,7 +112,7 @@ class SegmentationWidget(QWidget):
         self.previous_img_btn.clicked.connect(self.get_previous_image)
 
         self.make_segm_btn = QPushButton("Segment", self)
-        self.make_segm_btn.setGeometry(674, 530, 280, 40)
+        self.make_segm_btn.setGeometry(674, 530, 250, 40)
         self.make_segm_btn.setFont(QFont('Arial', 10))
 
         self.make_segm_btn.clicked.connect(self.visualise)
@@ -120,7 +120,7 @@ class SegmentationWidget(QWidget):
 
         self.param_box = QGroupBox("Dataset info", self)
         gbox2 = QGridLayout()
-        self.param_box.setGeometry(674, 300, 280, 180)
+        self.param_box.setGeometry(674, 300, 250, 180)
 
         self.data_dir_lbl = QLabel("Directory for your dataset: ", self)
         self.data_dir_lbl.setWordWrap(True)

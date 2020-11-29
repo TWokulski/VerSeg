@@ -33,5 +33,11 @@ class MainMenuWidget(QWidget):
                                            "color: black;\n"
                                            "font-weight: bold;"
                                            "")
-
+        self.prediction_button = QPushButton("Test", self)
+        self.prediction_button.setGeometry(532, 560, 320, 60)
+        self.prediction_button.setFont(QFont('Arial', 20))
+        self.prediction_button.setStyleSheet("background-color:white;\n"
+                                           "color: black;\n"
+                                           "font-weight: bold;"
+                                           "")
 

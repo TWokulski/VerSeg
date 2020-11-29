@@ -10,3 +10,7 @@ try:
     from .training_widget import TrainingWidget
 except ImportError:
     pass
+try:
+    from .prediction_widget import PredictionWidget
+except ImportError:
+    pass

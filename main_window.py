@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QApplication
 from GUI import MainMenuWidget
 from GUI import TrainingWidget
 from GUI import SegmentationWidget
+from GUI import PredictionWidget
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -36,10 +37,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.central_widget.addWidget(segmentation_widget)
         self.central_widget.setCurrentWidget(segmentation_widget)
 
+    def choose_Prediction(self):
+        prediction_widget = PredictionWidget(self)
+        prediction_widget.back_to_menu_btn.clicked.connect(self.choose_main_win)
+        self.central_widget.addWidget(prediction_widget)
+        self.central_widget.setCurrentWidget(prediction_widget)
+
     def choose_main_win(self):
         main_menu = MainMenuWidget(self)
         main_menu.training_button.clicked.connect(self.choose_Training)
         main_menu.segmentation_button.clicked.connect(self.choose_Segmentation)
+        main_menu.prediction_button.clicked.connect(self.choose_Prediction)
         self.central_widget.addWidget(main_menu)
         self.central_widget.setCurrentWidget(main_menu)
 
