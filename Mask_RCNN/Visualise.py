@@ -110,6 +110,9 @@ def draw_image(image, target=None, result=None, classes=None):
             mask_image_gt = get_mask_array(masks, True, shape)
         else:
             mask_image_gt = np.zeros(shape)
+    else:
+        boxes_image_gt = np.zeros(shape)
+        mask_image_gt = np.zeros(shape)
 
     if result:
         if "boxes" in result:
@@ -123,6 +126,9 @@ def draw_image(image, target=None, result=None, classes=None):
             mask_image_result = get_mask_array(masks, False, shape)
         else:
             mask_image_result = np.zeros(shape)
+    else:
+        boxes_image_result = np.zeros(shape)
+        mask_image_result = np.zeros(shape)
 
     return (new_image*255).astype("uint8"), boxes_image_gt, mask_image_gt, boxes_image_result, mask_image_result
 
