@@ -1,11 +1,12 @@
-from PyQt5 import QtGui, Qt
-from PyQt5.QtGui import QIntValidator, QFont, QIcon, QPixmap
-from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QLineEdit, QComboBox, QTabWidget, QGridLayout, \
+from PyQt5 import Qt
+from PyQt5.QtGui import QFont, QPixmap
+from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QTabWidget, QGridLayout, \
     QGroupBox, QFileDialog, QTextEdit, QApplication
 import torch
 import Mask_RCNN as algorithm
 from PIL import Image, ImageQt
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QThreadPool
+from GUI.ThreadClass import Worker
 import cv2
 import sys
 
@@ -13,6 +14,7 @@ import sys
 class SegmentationWidget(QWidget):
     def __init__(self, parent=None):
         super(SegmentationWidget, self).__init__(parent)
+        self.threadpool = QThreadPool()
 
         self.org_im_list = []
         self.gt_list = []
@@ -115,7 +117,7 @@ class SegmentationWidget(QWidget):
         self.make_segm_btn.setGeometry(674, 530, 250, 40)
         self.make_segm_btn.setFont(QFont('Arial', 10))
 
-        self.make_segm_btn.clicked.connect(self.visualise)
+        self.make_segm_btn.clicked.connect(self.process_visualise)
         self.make_segm_btn.setDisabled(False)
 
         self.param_box = QGroupBox("Dataset info", self)
@@ -165,7 +167,15 @@ class SegmentationWidget(QWidget):
             self.make_segm_btn.setDisabled(False)
 
     def get_val_samples(self):
-        return int(self.val_samples_value.toPlainText())
+        try:
+            samples = self.val_samples_value.toPlainText()
+            if samples == '':
+                samples = 1
+            else:
+                samples = int(samples)
+        except:
+           return 1
+        return samples
 
     def get_next_image(self):
         self.previous_img_btn.setDisabled(False)
@@ -183,6 +193,18 @@ class SegmentationWidget(QWidget):
             if self.present_index == 0:
                 self.previous_img_btn.setDisabled(True)
 
+    def print_output(self, s):
+        print(s)
+
+    def training_complete(self):
+        print("SEGMENTATION WAS PERFORMED")
+
+    def process_visualise(self):
+        worker = Worker(self.visualise)
+        worker.signals.result.connect(self.print_output)
+        worker.signals.finished.connect(self.training_complete)
+        self.threadpool.start(worker)
+
     def visualise(self):
 
         self.org_im_list = []
@@ -190,13 +212,13 @@ class SegmentationWidget(QWidget):
         self.pred_list = []
 
         try:
-            val_samples = 20
-            data_dir = 'Dataset'
-            model_path = 'model/best-274.pth'
+            val_samples = self.get_val_samples()
+            data_dir = self.dir_path
+            model_path = self.model_path
 
             device = torch.device('cpu')
 
-            dataset = algorithm.COCODataset(data_dir, 'Train', True)
+            dataset = algorithm.COCODataset(data_dir, 'Validation', True)
             classes = dataset.classes
             coco = dataset.coco
             iou_types = ['bbox', 'segm']
@@ -241,7 +263,8 @@ class SegmentationWidget(QWidget):
             self.update_img_place(0)
             self.previous_img_btn.setDisabled(True)
         except:
-            pass
+            return 'Failed.'
+        return 'Done.'
 
     def update_img_place(self, index):
         im1 = QPixmap.fromImage(self.org_im_list[index]).copy()
