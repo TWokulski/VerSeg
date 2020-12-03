@@ -17,7 +17,7 @@ class TrainingWidget(QWidget):
     def __init__(self, parent=None):
         super(TrainingWidget, self).__init__(parent)
 
-        self.best_model_by_maskF1 = 0
+        self.best_model_by_maskF = 0
         self.parameters = {}
 
         self.threadpool = QThreadPool()
@@ -84,9 +84,9 @@ class TrainingWidget(QWidget):
         self.best_model_box = QGroupBox("Your best model so far", self)
         self.after_epoch_lbl = QLabel("Score form epoch: ", self)
         self.after_epoch_value = QLabel("0", self)
-        self.f1_box_lbl = QLabel("Box F1 score: ", self)
+        self.f1_box_lbl = QLabel("Box F score: ", self)
         self.f1_box_value = QLabel("0.00", self)
-        self.f1_mask_lbl = QLabel("Mask F1 score: ", self)
+        self.f1_mask_lbl = QLabel("Mask F score: ", self)
         self.f1_mask_value = QLabel("0.00", self)
 
         self.total_training_time_lbl = QLabel("Your total training time: ", self)
@@ -533,6 +533,8 @@ class TrainingWidget(QWidget):
                 eval_output = algorithm.evaluate(model, val_set, device, self.parameters)
                 validation_epoch_time = time.time() - validation_epoch_time
 
+                print(eval_output)
+
                 if validation_epoch_time > 60:
                     validation_epoch_time_str = validation_epoch_time/60
                     validation_epoch_time_str = format(validation_epoch_time_str, ".2f")
@@ -549,13 +551,13 @@ class TrainingWidget(QWidget):
                 return
 
             trained_epoch = epoch + 1
-            maskF1 = eval_output.get_AF1()
-            if maskF1['mask F1Score'] > self.best_model_by_maskF1:
-                self.best_model_by_maskF1 = maskF1['mask F1Score']
+            maskF = eval_output.get_AF()
+            if maskF['mask FScore'] > self.best_model_by_maskF:
+                self.best_model_by_maskF = maskF['mask FScore']
                 algorithm.save_best(model, optimizer, trained_epoch,
                                     self.parameters['model_path'], eval_info=str(eval_output))
-                self.f1_box_value.setText('{}'.format(maskF1['bbox F1Score']))
-                self.f1_mask_value.setText('{}'.format(maskF1['mask F1Score']))
+                self.f1_box_value.setText('{}'.format(maskF['bbox FScore']))
+                self.f1_mask_value.setText('{}'.format(maskF['mask FScore']))
                 self.after_epoch_value.setText('{}'.format(epoch + 1))
                 QApplication.processEvents()
 

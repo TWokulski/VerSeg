@@ -71,7 +71,7 @@ class SegmentationWidget(QWidget):
         self.ap_box_value_lbl.setFont(QFont('Arial', 10))
         self.ap_box_value_lbl.setStyleSheet("color: Gray")
 
-        self.f1_box_text_lbl = QLabel("Box F1 Score: ", self)
+        self.f1_box_text_lbl = QLabel("Box F Score: ", self)
         self.f1_box_text_lbl.setWordWrap(True)
         self.f1_box_text_lbl.setFont(QFont('Arial', 10))
         self.f1_box_text_lbl.setStyleSheet("color: Gray")
@@ -81,7 +81,7 @@ class SegmentationWidget(QWidget):
         self.f1_box_value_lbl.setFont(QFont('Arial', 10))
         self.f1_box_value_lbl.setStyleSheet("color: Gray")
 
-        self.f1_mask_text_lbl = QLabel("Mask F1 Score: ", self)
+        self.f1_mask_text_lbl = QLabel("Mask F Score: ", self)
         self.f1_mask_text_lbl.setWordWrap(True)
         self.f1_mask_text_lbl.setFont(QFont('Arial', 10))
         self.f1_mask_text_lbl.setStyleSheet("color: Gray")
@@ -245,7 +245,7 @@ class SegmentationWidget(QWidget):
                 coco_results.extend(algorithm.prepare_for_coco(res, ann_labels))
                 output = evaluate(evaluator, coco_results)
                 self.ap_scores.append(output.get_AP())
-                self.f1_scores.append(output.get_AF1())
+                self.f1_scores.append(output.get_AF())
 
                 original_img, gt_box, gt_mask, pred_box, pred_mask = algorithm.draw_image(image, target, result, classes)
                 gt_image = cv2.addWeighted(original_img, 0.7, gt_mask, 0.7, 0)
@@ -282,8 +282,8 @@ class SegmentationWidget(QWidget):
 
         self.ap_box_value_lbl.setText('{}'.format(ap["bbox AP"]))
         self.ap_mask_value_lbl.setText('{}'.format(ap["mask AP"]))
-        self.f1_box_value_lbl.setText('{}'.format(f1['bbox F1Score']))
-        self.f1_mask_value_lbl.setText('{}'.format(f1['mask F1Score']))
+        self.f1_box_value_lbl.setText('{}'.format(f1['bbox FScore']))
+        self.f1_mask_value_lbl.setText('{}'.format(f1['mask FScore']))
         QApplication.processEvents()
 
     def show_images(self, image, target):

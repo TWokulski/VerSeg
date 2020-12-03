@@ -51,7 +51,7 @@ class CocoConversion:
         result = {"bbox AR": values[8], "mask AR": values[20]}
         return result
 
-    def get_AF1(self):
+    def get_AF(self):
         txt = str(self)
         values = re.findall(r"(\d{3})\n", txt)
         values = [int(v) / 10 for v in values]
@@ -66,5 +66,5 @@ class CocoConversion:
             dice_mask = 2 * (values[12] * values[19]) / (values[12] + values[20])
         dice_box = float(format(dice_box, ".2f"))
         dice_mask = float(format(dice_mask, ".2f"))
-        result = {"bbox F1Score": dice_box, "mask F1Score": dice_mask}
+        result = {"bbox FScore": dice_box, "mask FScore": dice_mask}
         return result
